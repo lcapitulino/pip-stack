@@ -8,10 +8,10 @@
 #include <linux/if.h>
 #include <linux/if_tun.h>
 
-#include "misc.h"
+#include "ether.h"
 #include "common.h"
 
-int tun_open(const char *dev)
+int ether_tun_open(const char *dev)
 {
 	struct ifreq ifr;
 	int fd, err;
@@ -36,8 +36,9 @@ int tun_open(const char *dev)
 	return fd;
 }
 
-void hwaddr_to_str(uint8_t a, uint8_t b, uint8_t c, uint8_t d, uint8_t e,
-				   uint8_t f, char *str, size_t len)
+void ether_addr_to_str(uint8_t a, uint8_t b, uint8_t c,
+					   uint8_t d, uint8_t e, uint8_t f,
+					   char *str, size_t len)
 {
 	snprintf(str, len, "%x:%x:%x:%x:%x:%x", a, b, c, d, e, f);
 }

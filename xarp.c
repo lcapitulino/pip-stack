@@ -1,5 +1,5 @@
 #include "common.h"
-#include "misc.h"
+#include "ether.h"
 
 int main(int argc, char *argv[])
 {
@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	fd = tun_open(argv[1]);
+	fd = ether_tun_open(argv[1]);
 	if (fd < 0) {
 		perror("tun_open()");
 		exit(1);
@@ -26,12 +26,12 @@ int main(int argc, char *argv[])
 			break;
 		}
 
-		hwaddr_to_str(buf[0], buf[1], buf[2], buf[3], buf[4], buf[5],
-					  hwaddr_str, sizeof(hwaddr_str));
+		ether_addr_to_str(buf[0], buf[1], buf[2], buf[3], buf[4], buf[5],
+					  	  hwaddr_str, sizeof(hwaddr_str));
 		fprintf(stderr, "-> dst: %s\n", hwaddr_str);
 
-		hwaddr_to_str(buf[6], buf[7], buf[8], buf[9], buf[10], buf[11],
-					  hwaddr_str, sizeof(hwaddr_str));
+		ether_addr_to_str(buf[6], buf[7], buf[8], buf[9], buf[10], buf[11],
+					  	  hwaddr_str, sizeof(hwaddr_str));
 		fprintf(stderr, "-> src: %s\n\n", hwaddr_str);
 
 	}
