@@ -36,6 +36,6 @@ int main(int argc, char *argv[])
 
 	}
 
-	tun_close(fd);
+	close(fd);
 	return 0;
 }
