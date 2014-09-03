@@ -3,7 +3,7 @@
 
 int main(int argc, char *argv[])
 {
-	uint8_t buf[2];
+	uint8_t buf[12];
 	ssize_t ret;
 	int fd;
 
@@ -19,13 +19,21 @@ int main(int argc, char *argv[])
 	}
 
 	while (true) {
-		ret = read(fd, buf, 1);
+		char hwaddr_str[64];
+		ret = read(fd, buf, 12);
 		if (ret < 0) {
 			perror("read()");
 			break;
 		}
 
-		fprintf(stderr, "0x%x\n", buf[0]);
+		hwaddr_to_str(buf[0], buf[1], buf[2], buf[3], buf[4], buf[5],
+					  hwaddr_str, sizeof(hwaddr_str));
+		fprintf(stderr, "-> dst: %s\n", hwaddr_str);
+
+		hwaddr_to_str(buf[6], buf[7], buf[8], buf[9], buf[10], buf[11],
+					  hwaddr_str, sizeof(hwaddr_str));
+		fprintf(stderr, "-> src: %s\n\n", hwaddr_str);
+
 	}
 
 	tun_close(fd);
