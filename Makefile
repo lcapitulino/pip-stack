@@ -1,5 +1,5 @@
 CC=gcc
-BIN=xarp
+BIN=uarp
 CFLAGS=-Wall -g3 -O0
 
 all: $(BIN)
@@ -7,10 +7,10 @@ all: $(BIN)
 ether.o: ether.c ether.h common.h
 	$(CC) $(CFLAGS) -c $<
 
-xarp.o: xarp.c common.h
+uarp.o: uarp.c common.h
 	$(CC) $(CFLAGS) -c $<
 
-xarp: xarp.o ether.o
+uarp: uarp.o ether.o
 	$(CC) -o $@ $+
 
 clean:
