@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 	int err, fd;
 
 	if (argc != 2) {
-		fprintf(stderr, "xarg <tap device>\n");
+		fprintf(stderr, "uarp <tap device>\n");
 		exit(1);
 	}
 
