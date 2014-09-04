@@ -1,0 +1,2 @@
+- all functions should set errno on error and return -1 or NULL
+- headers exporting a public API should not include common.h
