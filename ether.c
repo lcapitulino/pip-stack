@@ -26,7 +26,7 @@
 #include "ether.h"
 #include "common.h"
 
-int ether_tun_open(const char *dev)
+int ether_tun_open(const char *ifname, struct ether_device *dev)
 {
 	struct ifreq ifr;
 	int fd, err;
@@ -39,7 +39,7 @@ int ether_tun_open(const char *dev)
 		return -1;
 
 	memset(&ifr, 0, sizeof(ifr));
-	strncpy(ifr.ifr_name, dev, IFNAMSIZ);
+	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 	ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
 
 	err = ioctl(fd, TUNSETIFF, &ifr);
@@ -48,7 +48,21 @@ int ether_tun_open(const char *dev)
 		return err;
 	}
 
-	return fd;
+	dev->fd = fd;
+	return 0;
+}
+
+int ether_read_frame(struct ether_device *dev, struct ether_frame *frame)
+{
+	ssize_t ret;
+
+	ret = read(dev->fd, frame, sizeof(*frame));
+	if (ret < 0)
+		return ret;
+
+	frame->type = ntohs(frame->type);
+
+	return ret < 0 ? ret : 0;
 }
 
 void ether_addr_to_str(uint8_t a, uint8_t b, uint8_t c,
@@ -56,19 +70,6 @@ void ether_addr_to_str(uint8_t a, uint8_t b, uint8_t c,
 					   char *str, size_t len)
 {
 	snprintf(str, len, "%x:%x:%x:%x:%x:%x", a, b, c, d, e, f);
-}
-
-int ether_read_frame(int fd, struct ether_frame *frame)
-{
-	ssize_t ret;
-
-	ret = read(fd, frame, sizeof(*frame));
-	if (ret < 0)
-		return ret;
-
-	frame->type = ntohs(frame->type);
-
-	return ret < 0 ? ret : 0;
 }
 
 const char *ether_type_to_str(uint16_t type)

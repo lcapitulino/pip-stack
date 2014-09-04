@@ -40,6 +40,7 @@ static void print_frame(const struct ether_frame *frame)
 
 int main(int argc, char *argv[])
 {
+	struct ether_device dev;
 	int err, fd;
 
 	if (argc != 2) {
@@ -47,7 +48,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	fd = ether_tun_open(argv[1]);
+	fd = ether_tun_open(argv[1], &dev);
 	if (fd < 0) {
 		perror("tun_open()");
 		exit(1);
@@ -57,7 +58,7 @@ int main(int argc, char *argv[])
 		struct ether_frame frame;
 
 		memset(&frame, 0, sizeof(frame));
-		err = ether_read_frame(fd, &frame);
+		err = ether_read_frame(&dev, &frame);
 		if (err < 0) {
 			perror("ether_read_frame()");
 			break;
