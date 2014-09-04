@@ -65,42 +65,23 @@ void ether_dev_close(struct ether_device *dev)
 	dev->fd = -1;
 }
 
-int ether_dev_recv(struct ether_device *dev, struct ether_frame *frame)
-{
-	struct skbuf *skbuf;
-	ssize_t ret;
-
-	skbuf = skbuf_alloc(ETHER_FRAME_SIZE);
-	if (!skbuf)
-		return -1;
-
-	ret = read(dev->fd, skbuf->buf, ETHER_FRAME_SIZE);
-	if (ret < 0) {
-		ret = errno;
-		skbuf_free(skbuf);
-		errno = ret;
-		return -1;
-	}
-
-	frame->dst = skbuf->buf;
-	frame->src = &skbuf->buf[6];
-	frame->type = (uint16_t *) &skbuf->buf[12];
-	frame->skbuf = skbuf;
-
-	return 0;
-}
-
 struct ether_frame *ether_frame_alloc(void)
 {
 	struct ether_frame *frame;
 
 	frame = malloc(sizeof(*frame));
-	if (!frame) {
+	if (!frame)
+		return NULL;
+
+	memset(frame, 0, sizeof(*frame));
+
+	frame->skbuf = skbuf_alloc(ETHER_FRAME_SIZE);
+	if (!frame->skbuf) {
+		free(frame);
 		errno = ENOMEM;
 		return NULL;
 	}
 
-	memset(frame, 0, sizeof(*frame));
 	return frame;
 }
 
@@ -108,6 +89,21 @@ void ether_frame_free(struct ether_frame *frame)
 {
 	skbuf_free(frame->skbuf);
 	free(frame);
+}
+
+int ether_dev_recv(struct ether_device *dev, struct ether_frame *frame)
+{
+	ssize_t ret;
+
+	ret = read(dev->fd, frame->skbuf->buf, ETHER_FRAME_SIZE);
+	if (ret < 0)
+		return -1;
+
+	frame->dst = frame->skbuf->buf;
+	frame->src = &frame->skbuf->buf[6];
+	frame->type = (uint16_t *) &frame->skbuf->buf[12];
+
+	return 0;
 }
 
 uint16_t ether_frame_type(const struct ether_frame *frame)
