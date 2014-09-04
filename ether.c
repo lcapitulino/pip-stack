@@ -72,12 +72,14 @@ int ether_dev_recv(struct ether_device *dev, struct ether_frame *frame)
 
 	skbuf = skbuf_alloc(ETHER_FRAME_SIZE);
 	if (!skbuf)
-		return -ENOMEM;
+		return -1;
 
 	ret = read(dev->fd, skbuf->buf, ETHER_FRAME_SIZE);
 	if (ret < 0) {
+		ret = errno;
 		skbuf_free(skbuf);
-		return ret;
+		errno = ret;
+		return -1;
 	}
 
 	frame->dst = skbuf->buf;
@@ -85,7 +87,7 @@ int ether_dev_recv(struct ether_device *dev, struct ether_frame *frame)
 	frame->type = (uint16_t *) &skbuf->buf[12];
 	frame->skbuf = skbuf;
 
-	return ret < 0 ? ret : 0;
+	return 0;
 }
 
 struct ether_frame *ether_frame_alloc(void)
