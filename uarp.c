@@ -41,15 +41,15 @@ static void print_frame(const struct ether_frame *frame)
 int main(int argc, char *argv[])
 {
 	struct ether_device dev;
-	int err, fd;
+	int err;
 
 	if (argc != 2) {
 		fprintf(stderr, "uarp <tap device>\n");
 		exit(1);
 	}
 
-	fd = ether_tun_open(argv[1], &dev);
-	if (fd < 0) {
+	err = ether_tun_open(argv[1], &dev);
+	if (err < 0) {
 		perror("tun_open()");
 		exit(1);
 	}
@@ -67,6 +67,5 @@ int main(int argc, char *argv[])
 		print_frame(&frame);
 	}
 
-	close(fd);
 	return 0;
 }
