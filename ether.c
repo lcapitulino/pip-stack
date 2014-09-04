@@ -53,7 +53,7 @@ int ether_dev_open(const char *ifname, struct ether_device *dev)
 	return 0;
 }
 
-int ether_read_frame(struct ether_device *dev, struct ether_frame *frame)
+int ether_dev_recv(struct ether_device *dev, struct ether_frame *frame)
 {
 	struct skbuf *skbuf;
 	ssize_t ret;

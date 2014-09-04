@@ -59,9 +59,9 @@ int main(int argc, char *argv[])
 	while (true) {
 		struct ether_frame frame;
 
-		err = ether_read_frame(&dev, &frame);
+		err = ether_dev_recv(&dev, &frame);
 		if (err < 0) {
-			perror("ether_read_frame()");
+			perror("ether_dev_recv()");
 			break;
 		}
 
