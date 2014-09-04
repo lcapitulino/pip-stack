@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdio.h>
 
 struct ether_device {
 	int fd;
@@ -52,5 +53,6 @@ uint16_t ether_frame_type(const struct ether_frame *frame);
 uint16_t ether_frame_type(const struct ether_frame *frame);
 const char *ether_frame_type_str(const struct ether_frame *frame);
 const char *ether_type_to_str(uint16_t type);
+void ether_dump_frame(FILE *stream, const struct ether_frame *frame);
 
 #endif /* MISC_H */

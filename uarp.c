@@ -17,27 +17,6 @@
 #include "common.h"
 #include "ether.h"
 
-static void print_frame(const struct ether_frame *frame)
-{
-	char hwaddr_str[32];
-	const uint8_t *p;
-
-	p = frame->dst;
-	ether_addr_to_str(p[0], p[1], p[2], p[3], p[4], p[5],
-				  	  hwaddr_str, sizeof(hwaddr_str));
-	fprintf(stderr, "-> dst: %s\n", hwaddr_str);
-
-	p = frame->src;
-	ether_addr_to_str(p[0], p[1], p[2], p[3], p[4], p[5],
-				  	  hwaddr_str, sizeof(hwaddr_str));
-	fprintf(stderr, "-> src: %s\n", hwaddr_str);
-
-	fprintf(stderr, "-> type: 0x%x (%s)\n", ether_frame_type(frame),
-											ether_frame_type_str(frame));
-
-	fprintf(stderr, "\n");
-}
-
 int main(int argc, char *argv[])
 {
 	struct ether_frame *frame;
@@ -68,7 +47,7 @@ int main(int argc, char *argv[])
 			break;
 		}
 
-		print_frame(frame);
+		ether_dump_frame(stderr, frame);
 		ether_frame_free(frame);
 	}
 

@@ -121,3 +121,24 @@ void ether_addr_to_str(uint8_t a, uint8_t b, uint8_t c,
 {
 	snprintf(str, len, "%x:%x:%x:%x:%x:%x", a, b, c, d, e, f);
 }
+
+void ether_dump_frame(FILE *stream, const struct ether_frame *frame)
+{
+	char hwaddr_str[32];
+	const uint8_t *p;
+
+	p = frame->dst;
+	ether_addr_to_str(p[0], p[1], p[2], p[3], p[4], p[5],
+				  	  hwaddr_str, sizeof(hwaddr_str));
+	fprintf(stream, "-> dst: %s\n", hwaddr_str);
+
+	p = frame->src;
+	ether_addr_to_str(p[0], p[1], p[2], p[3], p[4], p[5],
+				  	  hwaddr_str, sizeof(hwaddr_str));
+	fprintf(stream, "-> src: %s\n", hwaddr_str);
+
+	fprintf(stream, "-> type: 0x%x (%s)\n", ether_frame_type(frame),
+											ether_frame_type_str(frame));
+
+	fprintf(stream, "\n");
+}
