@@ -12,6 +12,7 @@ struct skbuf *skbuf_alloc(size_t data_size)
 	sk->buf = malloc(data_size);
 	if (!sk->buf) {
 		free(sk);
+		errno = ENOMEM;
 		return NULL;
 	}
 
