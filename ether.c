@@ -24,6 +24,7 @@
 #include <linux/if_tun.h>
 
 #include "ether.h"
+#include "skbuf.h"
 #include "common.h"
 
 int ether_tun_open(const char *ifname, struct ether_device *dev)
@@ -54,13 +55,23 @@ int ether_tun_open(const char *ifname, struct ether_device *dev)
 
 int ether_read_frame(struct ether_device *dev, struct ether_frame *frame)
 {
+	struct skbuf *skbuf;
 	ssize_t ret;
 
-	ret = read(dev->fd, frame, sizeof(*frame));
-	if (ret < 0)
-		return ret;
+	skbuf = skbuf_alloc(ETHER_FRAME_SIZE);
+	if (!skbuf)
+		return -ENOMEM;
 
-	frame->type = ntohs(frame->type);
+	ret = read(dev->fd, skbuf->buf, ETHER_FRAME_SIZE);
+	if (ret < 0) {
+		skbuf_free(skbuf);
+		return ret;
+	}
+
+	frame->dst = skbuf->buf;
+	frame->src = &skbuf->buf[6];
+	frame->type = (uint16_t *) &skbuf->buf[12];
+	frame->skbuf = skbuf;
 
 	return ret < 0 ? ret : 0;
 }

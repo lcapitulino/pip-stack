@@ -32,8 +32,10 @@ static void print_frame(const struct ether_frame *frame)
 				  	  hwaddr_str, sizeof(hwaddr_str));
 	fprintf(stderr, "-> src: %s\n", hwaddr_str);
 
-	fprintf(stderr, "-> type: 0x%x (%s)\n", frame->type,
-											ether_type_to_str(frame->type));
+	//fprintf(stderr, "-> type: 0x%x (%s)\n", frame->type,
+	//										ether_type_to_str(*frame->type));
+
+	fprintf(stderr, "-> type: 0x%x\n", *frame->type);
 
 	fprintf(stderr, "\n");
 }
@@ -57,7 +59,6 @@ int main(int argc, char *argv[])
 	while (true) {
 		struct ether_frame frame;
 
-		memset(&frame, 0, sizeof(frame));
 		err = ether_read_frame(&dev, &frame);
 		if (err < 0) {
 			perror("ether_read_frame()");

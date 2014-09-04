@@ -25,10 +25,13 @@ struct ether_device {
 };
 
 struct ether_frame {
-	uint8_t dst[6];
-	uint8_t src[6];
-	uint16_t type;
+	const uint8_t *dst;
+	const uint8_t *src;
+	const uint16_t *type;
+	struct skbuf *skbuf;
 };
+
+#define ETHER_FRAME_SIZE 1518
 
 /* Ethernet types */
 #define ETHER_IPV4 0x0800
