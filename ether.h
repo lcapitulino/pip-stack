@@ -20,9 +20,25 @@
 #include <stdint.h>
 #include <stddef.h>
 
+struct ether_frame {
+	uint8_t dst[6];
+	uint8_t src[6];
+	uint16_t type;
+};
+
+/* Ethernet types */
+#define ETHER_IPV4 0x0800
+#define ETHER_ARP  0x0806
+#define ETHER_IPV6 0x86DD
+
 int ether_tun_open(const char *dev);
+
 void ether_addr_to_str(uint8_t a, uint8_t b, uint8_t c,
 					   uint8_t d, uint8_t e, uint8_t f,
 					   char *str, size_t len);
+
+int ether_read_frame(int fd, struct ether_frame *frame);
+
+const char *ether_type_to_str(uint16_t type);
 
 #endif /* MISC_H */

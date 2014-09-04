@@ -25,5 +25,6 @@
 #include <assert.h>
 #include <inttypes.h>
 #include <stdbool.h>
+#include <arpa/inet.h>
 
 #endif /* COMMON_H */

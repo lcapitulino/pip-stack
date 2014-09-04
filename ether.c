@@ -57,3 +57,30 @@ void ether_addr_to_str(uint8_t a, uint8_t b, uint8_t c,
 {
 	snprintf(str, len, "%x:%x:%x:%x:%x:%x", a, b, c, d, e, f);
 }
+
+int ether_read_frame(int fd, struct ether_frame *frame)
+{
+	ssize_t ret;
+
+	ret = read(fd, frame, sizeof(*frame));
+	if (ret < 0)
+		return ret;
+
+	frame->type = ntohs(frame->type);
+
+	return ret < 0 ? ret : 0;
+}
+
+const char *ether_type_to_str(uint16_t type)
+{
+	switch (type) {
+	case ETHER_IPV4:
+		return "ipv4";
+	case ETHER_ARP:
+		return "arp";
+	case ETHER_IPV6:
+		return "ipv6";
+	default:
+		return "unknown";
+	}
+}
