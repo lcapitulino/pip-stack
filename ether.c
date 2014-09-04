@@ -76,6 +76,26 @@ int ether_dev_recv(struct ether_device *dev, struct ether_frame *frame)
 	return ret < 0 ? ret : 0;
 }
 
+struct ether_frame *ether_frame_alloc(void)
+{
+	struct ether_frame *frame;
+
+	frame = malloc(sizeof(*frame));
+	if (!frame) {
+		errno = ENOMEM;
+		return NULL;
+	}
+
+	memset(frame, 0, sizeof(*frame));
+	return frame;
+}
+
+void ether_frame_free(struct ether_frame *frame)
+{
+	skbuf_free(frame->skbuf);
+	free(frame);
+}
+
 uint16_t ether_frame_type(const struct ether_frame *frame)
 {
 	return ntohs(*frame->type);

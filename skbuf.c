@@ -23,6 +23,8 @@ struct skbuf *skbuf_alloc(size_t data_size)
 
 void skbuf_free(struct skbuf *sk)
 {
-	free(sk->buf);
-	free(sk);
+	if (sk) {
+		free(sk->buf);
+		free(sk);
+	}
 }

@@ -46,6 +46,9 @@ void ether_addr_to_str(uint8_t a, uint8_t b, uint8_t c,
 					   uint8_t d, uint8_t e, uint8_t f,
 					   char *str, size_t len);
 
+struct ether_frame *ether_frame_alloc(void);
+void ether_frame_free(struct ether_frame *frame);
+uint16_t ether_frame_type(const struct ether_frame *frame);
 uint16_t ether_frame_type(const struct ether_frame *frame);
 const char *ether_frame_type_str(const struct ether_frame *frame);
 const char *ether_type_to_str(uint16_t type);

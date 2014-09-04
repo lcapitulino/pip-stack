@@ -40,6 +40,7 @@ static void print_frame(const struct ether_frame *frame)
 
 int main(int argc, char *argv[])
 {
+	struct ether_frame *frame;
 	struct ether_device dev;
 	int err;
 
@@ -55,15 +56,20 @@ int main(int argc, char *argv[])
 	}
 
 	while (true) {
-		struct ether_frame frame;
+		frame = ether_frame_alloc();
+		if (!frame) {
+			perror("ether_frame_alloc()");
+			break;
+		}
 
-		err = ether_dev_recv(&dev, &frame);
+		err = ether_dev_recv(&dev, frame);
 		if (err < 0) {
 			perror("ether_dev_recv()");
 			break;
 		}
 
-		print_frame(&frame);
+		print_frame(frame);
+		ether_frame_free(frame);
 	}
 
 	return 0;
