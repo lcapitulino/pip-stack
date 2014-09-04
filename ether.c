@@ -76,16 +76,14 @@ int ether_dev_recv(struct ether_device *dev, struct ether_frame *frame)
 	return ret < 0 ? ret : 0;
 }
 
-void ether_addr_to_str(uint8_t a, uint8_t b, uint8_t c,
-					   uint8_t d, uint8_t e, uint8_t f,
-					   char *str, size_t len)
+uint16_t ether_frame_type(const struct ether_frame *frame)
 {
-	snprintf(str, len, "%x:%x:%x:%x:%x:%x", a, b, c, d, e, f);
+	return ntohs(*frame->type);
 }
 
-const char *ether_type_to_str(uint16_t type)
+const char *ether_frame_type_str(const struct ether_frame *frame)
 {
-	switch (type) {
+	switch (ether_frame_type(frame)) {
 	case ETHER_IPV4:
 		return "ipv4";
 	case ETHER_ARP:
@@ -95,4 +93,11 @@ const char *ether_type_to_str(uint16_t type)
 	default:
 		return "unknown";
 	}
+}
+
+void ether_addr_to_str(uint8_t a, uint8_t b, uint8_t c,
+					   uint8_t d, uint8_t e, uint8_t f,
+					   char *str, size_t len)
+{
+	snprintf(str, len, "%x:%x:%x:%x:%x:%x", a, b, c, d, e, f);
 }
