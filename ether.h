@@ -38,7 +38,7 @@ struct ether_frame {
 #define ETHER_ARP  0x0806
 #define ETHER_IPV6 0x86DD
 
-int ether_tun_open(const char *ifname, struct ether_device *dev);
+int ether_dev_open(const char *ifname, struct ether_device *dev);
 
 int ether_read_frame(struct ether_device *dev, struct ether_frame *frame);
 

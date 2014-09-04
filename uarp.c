@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	err = ether_tun_open(argv[1], &dev);
+	err = ether_dev_open(argv[1], &dev);
 	if (err < 0) {
 		perror("tun_open()");
 		exit(1);

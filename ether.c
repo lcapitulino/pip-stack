@@ -27,7 +27,7 @@
 #include "skbuf.h"
 #include "common.h"
 
-int ether_tun_open(const char *ifname, struct ether_device *dev)
+int ether_dev_open(const char *ifname, struct ether_device *dev)
 {
 	struct ifreq ifr;
 	int fd, err;
