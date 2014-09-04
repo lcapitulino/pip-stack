@@ -32,6 +32,11 @@ struct ether_frame {
 	struct skbuf *skbuf;
 };
 
+/*
+ * This is the maxium size for what the 802.3 standard calls
+ * a "basic frame". There are others frame types (Q-tagged
+ * and envelope frames) but we only support the basic frame.
+ */
 #define ETHER_FRAME_SIZE 1518
 
 /* Ethernet types */
