@@ -45,7 +45,7 @@ struct ether_frame {
 #define ETHER_IPV6 0x86DD
 
 int ether_dev_open(const char *ifname, struct ether_device *dev);
-
+void ether_dev_close(struct ether_device *dev);
 int ether_dev_recv(struct ether_device *dev, struct ether_frame *frame);
 
 void ether_addr_to_str(uint8_t a, uint8_t b, uint8_t c,

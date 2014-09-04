@@ -51,5 +51,6 @@ int main(int argc, char *argv[])
 		ether_frame_free(frame);
 	}
 
+	ether_dev_close(&dev);
 	return 0;
 }
