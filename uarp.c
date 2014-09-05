@@ -23,12 +23,12 @@ int main(int argc, char *argv[])
 	struct ether_device dev;
 	int err;
 
-	if (argc != 2) {
-		fprintf(stderr, "uarp <tap device>\n");
+	if (argc != 3) {
+		fprintf(stderr, "uarp <tap device> <hwaddr>\n");
 		exit(1);
 	}
 
-	err = ether_dev_open(argv[1], &dev);
+	err = ether_dev_open(argv[1], argv[2], &dev);
 	if (err < 0) {
 		perror("tun_open()");
 		exit(1);

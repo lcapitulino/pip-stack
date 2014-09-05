@@ -27,12 +27,13 @@
 #include "skbuf.h"
 #include "common.h"
 
-int ether_dev_open(const char *ifname, struct ether_device *dev)
+int ether_dev_open(const char *ifname, const char *hwaddr_str,
+				   struct ether_device *dev)
 {
 	struct ifreq ifr;
 	int err;
 
-	if (!dev) {
+	if (!dev || !hwaddr_str) {
 		errno = EINVAL;
 		dev->fd = -1;
 		return -1;
@@ -49,6 +50,9 @@ int ether_dev_open(const char *ifname, struct ether_device *dev)
 	err = ioctl(dev->fd, TUNSETIFF, &ifr);
 	if (err < 0)
 		goto out_err;
+
+	memset(dev->hwaddr, 0, sizeof(dev->hwaddr));
+	ether_str_to_addr(hwaddr_str, dev->hwaddr);
 
 	return 0;
 
@@ -131,6 +135,17 @@ void ether_addr_to_str(uint8_t a, uint8_t b, uint8_t c,
 					   char *str, size_t len)
 {
 	snprintf(str, len, "%x:%x:%x:%x:%x:%x", a, b, c, d, e, f);
+}
+
+void ether_str_to_addr(const char *hwaddr_str, uint8_t *hwaddr)
+{
+	sscanf(hwaddr_str, "%x:%x:%x:%x:%x:%x",
+									(unsigned int *) &hwaddr[0],
+									(unsigned int *) &hwaddr[1],
+									(unsigned int *) &hwaddr[2],
+									(unsigned int *) &hwaddr[3],
+									(unsigned int *) &hwaddr[4],
+									(unsigned int *) &hwaddr[5]);
 }
 
 void ether_dump_frame(FILE *stream, const struct ether_frame *frame)
