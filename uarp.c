@@ -23,6 +23,14 @@
 #include "arp.h"
 #include "misc.h"
 
+struct uarp_config {
+	const char *ifname;
+	const char *hwaddr_str;
+	const char *path_dump_eth;
+	const char *path_dump_arp;
+	bool dump_mode;
+};
+
 static void uarp_dump_loop(struct ether_device *dev,
 						   FILE *file_dump_eth,
 						   FILE *file_dump_arp)
@@ -76,37 +84,29 @@ static void usage(void)
 	printf("\n");
 }
 
-int main(int argc, char *argv[])
+static void uarp_parse_cmdline(int argc, char *argv[],
+							   struct uarp_config *config)
 {
-	FILE *file_dump_eth, *file_dump_arp;
-	const char *ifname, *hwaddr_str;
-	const char *prompt = "uarp> ";
-	const char *path_dump_eth;
-	const char *path_dump_arp;
-	struct ether_device dev;
-	bool dump_mode = false;
-	int opt, err;
+	int opt;
 
-	ifname = hwaddr_str = NULL;
-	path_dump_eth = path_dump_arp = NULL;
-	file_dump_eth = file_dump_arp = NULL;
+	memset(config, 0, sizeof(*config));
 
 	while ((opt = getopt(argc, argv, "i:a:E:R:hD")) != -1) {
 		switch (opt) {
 		case 'i':
-			ifname = optarg;
+			config->ifname = optarg;
 			break;
 		case 'a':
-			hwaddr_str = optarg;
+			config->hwaddr_str = optarg;
 			break;
 		case 'E':
-			path_dump_eth = optarg;
+			config->path_dump_eth = optarg;
 			break;
 		case 'R':
-			path_dump_arp = optarg;
+			config->path_dump_arp = optarg;
 			break;
 		case 'D':
-			dump_mode = true;
+			config->dump_mode = true;
 			break;
 		case 'h':
 		default:
@@ -114,30 +114,41 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 	}
+}
 
-	die_if_not_passed("ifname", ifname);
-	die_if_not_passed("hwaddr", hwaddr_str);
+int main(int argc, char *argv[])
+{
+	FILE *file_dump_eth, *file_dump_arp;
+	struct uarp_config config;
+	struct ether_device dev;
+	int err;
 
-	if (path_dump_eth)
-		file_dump_eth = xfopen(path_dump_eth, "a");
+	file_dump_eth = file_dump_arp = NULL;
 
-	if (path_dump_arp)
-		file_dump_arp = xfopen(path_dump_arp, "a");
+	uarp_parse_cmdline(argc, argv, &config);
+	die_if_not_passed("ifname", config.ifname);
+	die_if_not_passed("hwaddr", config.hwaddr_str);
 
-	err = ether_dev_open(ifname, hwaddr_str, &dev);
+	if (config.path_dump_eth)
+		file_dump_eth = xfopen(config.path_dump_eth, "a");
+
+	if (config.path_dump_arp)
+		file_dump_arp = xfopen(config.path_dump_arp, "a");
+
+	err = ether_dev_open(config.ifname, config.hwaddr_str, &dev);
 	if (err < 0) {
 		perror("tun_open()");
 		exit(1);
 	}
 
-	if (dump_mode) {
+	if (config.dump_mode) {
 		uarp_dump_loop(&dev, file_dump_eth, file_dump_arp);
 		goto out;
 	}
 
 	/* shell */
 	while (true) {
-		char *cmd = readline(prompt);
+		char *cmd = readline("uarp> ");
 		if (!cmd) {
 			putchar('\n');
 			break;
