@@ -61,7 +61,7 @@ uint16_t ether_get_type(const struct ether_frame *frame);
 uint32_t ether_get_data_size(const struct ether_frame *frame);
 struct skbuf *ether_get_skbuf_ptr(const struct ether_frame *frame);
 
-const char *ether_frame_type_str(const struct ether_frame *frame);
+const char *ether_get_type_str(const struct ether_frame *frame);
 const char *ether_type_to_str(uint16_t type);
 void ether_addr_to_str(const uint8_t *hwaddr, char *str, size_t len);
 void ether_str_to_addr(const char *hwaddr_str, uint8_t *hwaddr);

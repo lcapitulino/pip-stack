@@ -129,17 +129,7 @@ uint16_t ether_get_type(const struct ether_frame *frame)
 	return ntohs(*frame->type);
 }
 
-struct skbuf *ether_get_skbuf_ptr(const struct ether_frame *frame)
-{
-	return frame->skbuf;
-}
-
-uint32_t ether_get_data_size(const struct ether_frame *frame)
-{
-	return frame->data_size;
-}
-
-const char *ether_frame_type_str(const struct ether_frame *frame)
+const char *ether_get_type_str(const struct ether_frame *frame)
 {
 	switch (ether_get_type(frame)) {
 	case ETHER_IPV4:
@@ -151,6 +141,16 @@ const char *ether_frame_type_str(const struct ether_frame *frame)
 	default:
 		return "unknown";
 	}
+}
+
+struct skbuf *ether_get_skbuf_ptr(const struct ether_frame *frame)
+{
+	return frame->skbuf;
+}
+
+uint32_t ether_get_data_size(const struct ether_frame *frame)
+{
+	return frame->data_size;
 }
 
 void ether_addr_to_str(const uint8_t *hwaddr, char *str, size_t len)
@@ -186,7 +186,7 @@ void ether_dump_frame(FILE *stream, const struct ether_frame *frame)
 	fprintf(stream, "-> src: %s\n", hwaddr_str);
 
 	fprintf(stream, "-> type: 0x%x (%s)\n", ether_get_type(frame),
-											ether_frame_type_str(frame));
+											ether_get_type_str(frame));
 	fprintf(stream, "-> data size: %lu\n",
 			(long unsigned int) ether_get_data_size(frame));
 
