@@ -31,6 +31,11 @@ struct uarp_config {
 	bool dump_mode;
 };
 
+struct uarp_shell_cmds {
+	const char *name;
+	void (*func)(struct ether_device *dev, const char *cmd);
+};
+
 static void uarp_dump_loop(struct ether_device *dev,
 						   FILE *file_dump_eth,
 						   FILE *file_dump_arp)
@@ -71,6 +76,50 @@ static void uarp_dump_loop(struct ether_device *dev,
 	}
 
 }
+
+static void uarp_shell_help(struct ether_device *dev, const char *cmd)
+{
+	printf("\nuarp shell commands:\n\n");
+	printf("   help: this text\n");
+	printf("\n");
+}
+
+static void uarp_shell(struct ether_device *dev,
+					   FILE *file_dump_eth,
+					   FILE *file_dump_arp)
+{
+	const struct uarp_shell_cmds shell_cmds[] = {
+		{ "help", uarp_shell_help },
+		{ "?", uarp_shell_help },
+		{ .name = NULL }
+	};
+	char *cmd;
+	int i;
+
+	while (true) {
+		cmd = readline("uarp> ");
+		if (!cmd) {
+			putchar('\n');
+			break;
+		} else if (cmd[0] == '\0') {
+			free(cmd);
+			continue;
+		}
+
+		for (i = 0; shell_cmds[i].name; i++) {
+			if (!strncmp(shell_cmds[i].name, cmd, strlen(shell_cmds[i].name))) {
+				shell_cmds[i].func(dev, cmd);
+				break;
+			}
+		}
+
+		if (!shell_cmds[i].name)
+			printf("command not found: %s\n", cmd);
+
+		free(cmd);
+	}
+}
+
 
 static void usage(void)
 {
@@ -143,22 +192,10 @@ int main(int argc, char *argv[])
 
 	if (config.dump_mode) {
 		uarp_dump_loop(&dev, file_dump_eth, file_dump_arp);
-		goto out;
+	} else {
+		uarp_shell(&dev, file_dump_eth, file_dump_arp);
 	}
 
-	/* shell */
-	while (true) {
-		char *cmd = readline("uarp> ");
-		if (!cmd) {
-			putchar('\n');
-			break;
-		}
-
-		printf("cmd: %s\n", cmd);
-		free(cmd);
-	}
-
-out:
 	ether_dev_close(&dev);
 	return 0;
 }
