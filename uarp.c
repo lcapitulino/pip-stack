@@ -20,24 +20,30 @@
 
 static void usage(void)
 {
-	printf("Usage: uarp -i <interface> -a <hwaddr>\n");
+	printf("Usage: uarp -i <interface> -a <hwaddr> ");
+	printf("[-E file] [-R file]\n\n");
+	printf("   -i <interface>: tap interface to use\n");
+	printf("   -a <hwaddr>   : hardware address\n");
+	printf("   -E <file>     : dump ethernet packates to <file>\n");
+	printf("   -A <file>     : dump ARP packates to <file>\n");
+	printf("\n");
 }
 
 int main(int argc, char *argv[])
 {
-	FILE *file_dump_all, *file_dump_arp;
+	FILE *file_dump_eth, *file_dump_arp;
 	const char *ifname, *hwaddr_str;
-	const char *path_dump_all;
+	const char *path_dump_eth;
 	const char *path_dump_arp;
 	struct ether_frame *frame;
 	struct ether_device dev;
 	int opt, err;
 
 	ifname = hwaddr_str = NULL;
-	path_dump_all = path_dump_arp = NULL;
-	file_dump_all = file_dump_arp = NULL;
+	path_dump_eth = path_dump_arp = NULL;
+	file_dump_eth = file_dump_arp = NULL;
 
-	while ((opt = getopt(argc, argv, "i:a:L:R:h")) != -1) {
+	while ((opt = getopt(argc, argv, "i:a:E:R:h")) != -1) {
 		switch (opt) {
 		case 'i':
 			ifname = optarg;
@@ -45,8 +51,8 @@ int main(int argc, char *argv[])
 		case 'a':
 			hwaddr_str = optarg;
 			break;
-		case 'L':
-			path_dump_all = optarg;
+		case 'E':
+			path_dump_eth = optarg;
 			break;
 		case 'R':
 			path_dump_arp = optarg;
@@ -61,8 +67,8 @@ int main(int argc, char *argv[])
 	die_if_not_passed("ifname", ifname);
 	die_if_not_passed("hwaddr", hwaddr_str);
 
-	if (path_dump_all)
-		file_dump_all = xfopen(path_dump_all, "a");
+	if (path_dump_eth)
+		file_dump_eth = xfopen(path_dump_eth, "a");
 
 	if (path_dump_arp)
 		file_dump_arp = xfopen(path_dump_arp, "a");
@@ -86,8 +92,8 @@ int main(int argc, char *argv[])
 			break;
 		}
 
-		if (file_dump_all)
-			ether_dump_frame(file_dump_all, frame);
+		if (file_dump_eth)
+			ether_dump_frame(file_dump_eth, frame);
 
 		if (file_dump_arp && ether_frame_type(frame) == ETHER_ARP)
 			ether_dump_frame(file_dump_arp, frame);
