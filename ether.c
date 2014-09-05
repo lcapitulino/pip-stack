@@ -70,6 +70,22 @@ void ether_dev_close(struct ether_device *dev)
 	dev->fd = -1;
 }
 
+int ether_dev_recv(struct ether_device *dev, struct ether_frame *frame)
+{
+	ssize_t ret;
+
+	ret = read(dev->fd, frame->skbuf->buf, ETHER_FRAME_SIZE);
+	if (ret < 0)
+		return -1;
+
+	frame->dst = frame->skbuf->buf;
+	frame->src = &frame->skbuf->buf[6];
+	frame->type = (uint16_t *) &frame->skbuf->buf[12];
+	frame->data_size = ret - ETHER_HEADER_SIZE;
+
+	return 0;
+}
+
 struct ether_frame *ether_frame_alloc(void)
 {
 	struct ether_frame *frame;
@@ -94,22 +110,6 @@ void ether_frame_free(struct ether_frame *frame)
 {
 	skbuf_put(frame->skbuf);
 	free(frame);
-}
-
-int ether_dev_recv(struct ether_device *dev, struct ether_frame *frame)
-{
-	ssize_t ret;
-
-	ret = read(dev->fd, frame->skbuf->buf, ETHER_FRAME_SIZE);
-	if (ret < 0)
-		return -1;
-
-	frame->dst = frame->skbuf->buf;
-	frame->src = &frame->skbuf->buf[6];
-	frame->type = (uint16_t *) &frame->skbuf->buf[12];
-	frame->data_size = ret - ETHER_HEADER_SIZE;
-
-	return 0;
 }
 
 uint16_t ether_frame_type(const struct ether_frame *frame)
