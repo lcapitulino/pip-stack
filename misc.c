@@ -23,7 +23,7 @@
 void die_if_not_passed(const char *opt, const char *var)
 {
 	if (!var) {
-		fprintf(stderr, "ERROR: '%s' is required\n", opt);
+		fprintf(stderr, "ERROR: '%s' is required (see help)\n", opt);
 		exit(1);
 	}
 }
