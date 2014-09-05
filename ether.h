@@ -30,6 +30,7 @@ struct ether_frame {
 	const uint8_t *dst;
 	const uint8_t *src;
 	const uint16_t *type;
+	uint32_t data_size;
 	struct skbuf *skbuf;
 };
 

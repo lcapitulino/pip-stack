@@ -107,6 +107,7 @@ int ether_dev_recv(struct ether_device *dev, struct ether_frame *frame)
 	frame->dst = frame->skbuf->buf;
 	frame->src = &frame->skbuf->buf[6];
 	frame->type = (uint16_t *) &frame->skbuf->buf[12];
+	frame->data_size = ret - 14;
 
 	return 0;
 }
@@ -164,6 +165,7 @@ void ether_dump_frame(FILE *stream, const struct ether_frame *frame)
 
 	fprintf(stream, "-> type: 0x%x (%s)\n", ether_frame_type(frame),
 											ether_frame_type_str(frame));
+	fprintf(stream, "-> data size: %lu\n", (long unsigned int)frame->data_size);
 
 	fprintf(stream, "\n");
 }
