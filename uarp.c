@@ -14,6 +14,10 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <stdio.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+
 #include "common.h"
 #include "ether.h"
 #include "arp.h"
@@ -76,6 +80,7 @@ int main(int argc, char *argv[])
 {
 	FILE *file_dump_eth, *file_dump_arp;
 	const char *ifname, *hwaddr_str;
+	const char *prompt = "uarp> ";
 	const char *path_dump_eth;
 	const char *path_dump_arp;
 	struct ether_device dev;
@@ -128,6 +133,18 @@ int main(int argc, char *argv[])
 	if (dump_mode) {
 		uarp_dump_loop(&dev, file_dump_eth, file_dump_arp);
 		goto out;
+	}
+
+	/* shell */
+	while (true) {
+		char *cmd = readline(prompt);
+		if (!cmd) {
+			putchar('\n');
+			break;
+		}
+
+		printf("cmd: %s\n", cmd);
+		free(cmd);
 	}
 
 out:

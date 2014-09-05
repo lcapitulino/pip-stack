@@ -19,7 +19,7 @@ ether.o: ether.c ether.h skbuf.h common.h
 uarp.o: uarp.c common.h ether.h arp.h misc.h
 	$(CC) $(CFLAGS) -c $<
 
-uarp: uarp.o ether.o skbuf.o misc.o arp.o -lefence
+uarp: uarp.o ether.o skbuf.o misc.o arp.o -lefence -lreadline
 	$(CC) -o $@ $+
 
 clean:
