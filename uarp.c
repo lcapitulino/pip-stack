@@ -16,35 +16,36 @@
  */
 #include "common.h"
 #include "ether.h"
+#include "misc.h"
 
 static void usage(void)
 {
 	printf("Usage: uarp -i <interface> -a <hwaddr>\n");
 }
 
-static void die_if_not_passed(const char *opt, const char *var)
-{
-	if (!var) {
-		fprintf(stderr, "ERROR: '%s' is required\n", opt);
-		exit(1);
-	}
-}
-
 int main(int argc, char *argv[])
 {
 	const char *ifname, *hwaddr_str;
+	const char *path_dump_all;
+	FILE *file_dump_all;
 	struct ether_frame *frame;
 	struct ether_device dev;
 	int opt, err;
 
 	ifname = hwaddr_str = NULL;
-	while ((opt = getopt(argc, argv, "i:a:h")) != -1) {
+	path_dump_all = NULL;
+	file_dump_all = NULL;
+
+	while ((opt = getopt(argc, argv, "i:a:L:h")) != -1) {
 		switch (opt) {
 		case 'i':
 			ifname = optarg;
 			break;
 		case 'a':
 			hwaddr_str = optarg;
+			break;
+		case 'L':
+			path_dump_all = optarg;
 			break;
 		case 'h':
 		default:
@@ -55,6 +56,9 @@ int main(int argc, char *argv[])
 
 	die_if_not_passed("ifname", ifname);
 	die_if_not_passed("hwaddr", hwaddr_str);
+
+	if (path_dump_all)
+		file_dump_all = xfopen(path_dump_all, "a");
 
 	err = ether_dev_open(ifname, hwaddr_str, &dev);
 	if (err < 0) {
@@ -75,7 +79,9 @@ int main(int argc, char *argv[])
 			break;
 		}
 
-		ether_dump_frame(stderr, frame);
+		if (file_dump_all)
+			ether_dump_frame(file_dump_all, frame);
+
 		ether_frame_free(frame);
 	}
 
