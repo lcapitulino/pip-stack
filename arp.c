@@ -32,7 +32,7 @@ struct arp_packet *arp_from_ether_frame(const struct ether_frame *frame)
 	arp->skbuf = ether_get_skbuf_ptr(frame);
 	skbuf_get(arp->skbuf);
 
-	p = (uint8_t *) &arp->skbuf->buf[ETHER_HEADER_SIZE];
+	p = (uint8_t *) &skbuf_get_data_ptr(arp->skbuf)[ETHER_HEADER_SIZE];
 	arp->htype = (const uint16_t *) &p[0];
 	arp->ptype = (const uint16_t *) &p[2];
 	arp->hlen  = (const uint8_t *)  &p[4];

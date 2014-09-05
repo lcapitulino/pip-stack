@@ -57,3 +57,8 @@ void skbuf_put(struct skbuf *sk)
 		free(sk);
 	}
 }
+
+uint8_t *skbuf_get_data_ptr(const struct skbuf *sk)
+{
+	return sk->buf;
+}

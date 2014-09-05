@@ -72,14 +72,14 @@ void ether_dev_close(struct ether_device *dev)
 
 int ether_dev_recv(struct ether_device *dev, struct ether_frame *frame)
 {
-	const uint8_t *p;
 	ssize_t ret;
+	uint8_t *p;
 
-	ret = read(dev->fd, frame->skbuf->buf, ETHER_FRAME_SIZE);
+	p = skbuf_get_data_ptr(frame->skbuf);
+	ret = read(dev->fd, p, ETHER_FRAME_SIZE);
 	if (ret < 0)
 		return -1;
 
-	p = frame->skbuf->buf;
 	frame->dst = (uint8_t *)   &p[0];
 	frame->src = (uint8_t *)   &p[6];
 	frame->type = (uint16_t *) &p[12];

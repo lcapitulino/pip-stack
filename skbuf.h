@@ -30,4 +30,6 @@ struct skbuf *skbuf_alloc(size_t data_size);
 struct skbuf *skbuf_get(struct skbuf *sk);
 void skbuf_put(struct skbuf *sk);
 
+uint8_t *skbuf_get_data_ptr(const struct skbuf *sk);
+
 #endif /* SKBUF_H */
