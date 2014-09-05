@@ -114,14 +114,14 @@ void ether_frame_free(struct ether_frame *frame)
 	free(frame);
 }
 
-uint16_t ether_frame_type(const struct ether_frame *frame)
+uint16_t ether_get_type(const struct ether_frame *frame)
 {
 	return ntohs(*frame->type);
 }
 
 const char *ether_frame_type_str(const struct ether_frame *frame)
 {
-	switch (ether_frame_type(frame)) {
+	switch (ether_get_type(frame)) {
 	case ETHER_IPV4:
 		return "ipv4";
 	case ETHER_ARP:
@@ -165,7 +165,7 @@ void ether_dump_frame(FILE *stream, const struct ether_frame *frame)
 	ether_addr_to_str(frame->src, hwaddr_str, sizeof(hwaddr_str));
 	fprintf(stream, "-> src: %s\n", hwaddr_str);
 
-	fprintf(stream, "-> type: 0x%x (%s)\n", ether_frame_type(frame),
+	fprintf(stream, "-> type: 0x%x (%s)\n", ether_get_type(frame),
 											ether_frame_type_str(frame));
 	fprintf(stream, "-> data size: %lu\n", (long unsigned int)frame->data_size);
 

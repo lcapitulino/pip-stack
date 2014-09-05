@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 		if (file_dump_eth)
 			ether_dump_frame(file_dump_eth, frame);
 
-		if (ether_frame_type(frame) == ETHER_ARP) {
+		if (ether_get_type(frame) == ETHER_ARP) {
 			arp = arp_from_ether_frame(frame);
 			if (file_dump_arp)
 				arp_dump_packet(file_dump_arp, arp);
