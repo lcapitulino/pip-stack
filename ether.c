@@ -107,7 +107,7 @@ int ether_dev_recv(struct ether_device *dev, struct ether_frame *frame)
 	frame->dst = frame->skbuf->buf;
 	frame->src = &frame->skbuf->buf[6];
 	frame->type = (uint16_t *) &frame->skbuf->buf[12];
-	frame->data_size = ret - 14;
+	frame->data_size = ret - ETHER_HEADER_SIZE;
 
 	return 0;
 }

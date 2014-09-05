@@ -40,6 +40,7 @@ struct ether_frame {
  * and envelope frames) but we only support the basic frame.
  */
 #define ETHER_FRAME_SIZE 1518
+#define ETHER_HEADER_SIZE 14
 
 /* Ethernet types */
 #define ETHER_IPV4 0x0800
