@@ -80,9 +80,9 @@ int ether_dev_recv(struct ether_device *dev, struct ether_frame *frame)
 	if (ret < 0)
 		return -1;
 
-	frame->dst = (uint8_t *)   &p[0];
-	frame->src = (uint8_t *)   &p[6];
-	frame->type = (uint16_t *) &p[12];
+	frame->dst =  (const uint8_t *)  &p[0];
+	frame->src =  (const uint8_t *)  &p[6];
+	frame->type = (const uint16_t *) &p[12];
 	frame->data_size = ret - ETHER_HEADER_SIZE;
 
 	return 0;
