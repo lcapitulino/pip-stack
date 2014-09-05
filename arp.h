@@ -52,7 +52,8 @@ uint16_t arp_get_oper(const struct arp_packet *arp);
 const uint8_t *arp_get_sha(const struct arp_packet *arp);
 uint32_t arp_get_spa(const struct arp_packet *arp);
 const uint8_t *arp_get_tha(const struct arp_packet *arp);
-void arp_dump_packet(FILE *stream, const struct arp_packet *arp);
 uint32_t arp_get_tpa(const struct arp_packet *arp);
+const char *arp_oper_str(const struct arp_packet *arp);
+void arp_dump_packet(FILE *stream, const struct arp_packet *arp);
 
 #endif /* ARP_H */

@@ -99,17 +99,29 @@ uint32_t arp_get_tpa(const struct arp_packet *arp)
 	return ntohl(*arp->spa);
 }
 
+const char *arp_oper_str(const struct arp_packet *arp)
+{
+	switch (arp_get_oper(arp)) {
+	case 1:
+		return "arp request";
+	case 2:
+		return "arp reply";
+	default:
+		abort();
+	}
+}
+
 void arp_dump_packet(FILE *stream, const struct arp_packet *arp)
 {
 	char ipv4_addr_str[16];
 	char hwaddr_str[32];
 
-	fprintf(stream, "ARP packet:\n");
+	fprintf(stream, "ARP packet:\n\n");
 	fprintf(stream, "   htype: %d\n", arp_get_htype(arp));
 	fprintf(stream, "   ptype: %x\n", arp_get_ptype(arp));
 	fprintf(stream, "   hlen:  %d\n", arp_get_hlen(arp));
 	fprintf(stream, "   plen:  %d\n", arp_get_plen(arp));
-	fprintf(stream, "   oper:  %d\n", arp_get_oper(arp));
+	fprintf(stream, "   oper:  %d (%s)\n", arp_get_oper(arp),arp_oper_str(arp));
 
 	memset(hwaddr_str, 0, sizeof(hwaddr_str));
 	ether_addr_to_str(arp_get_sha(arp), hwaddr_str, sizeof(hwaddr_str));
