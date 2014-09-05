@@ -17,18 +17,46 @@
 #include "common.h"
 #include "ether.h"
 
-int main(int argc, char *argv[])
+static void usage(void)
 {
-	struct ether_frame *frame;
-	struct ether_device dev;
-	int err;
+	printf("Usage: uarp -i <interface> -a <hwaddr>\n");
+}
 
-	if (argc != 3) {
-		fprintf(stderr, "uarp <tap device> <hwaddr>\n");
+static void die_if_not_passed(const char *opt, const char *var)
+{
+	if (!var) {
+		fprintf(stderr, "ERROR: '%s' is required\n", opt);
 		exit(1);
 	}
+}
 
-	err = ether_dev_open(argv[1], argv[2], &dev);
+int main(int argc, char *argv[])
+{
+	const char *ifname, *hwaddr_str;
+	struct ether_frame *frame;
+	struct ether_device dev;
+	int opt, err;
+
+	ifname = hwaddr_str = NULL;
+	while ((opt = getopt(argc, argv, "i:a:h")) != -1) {
+		switch (opt) {
+		case 'i':
+			ifname = optarg;
+			break;
+		case 'a':
+			hwaddr_str = optarg;
+			break;
+		case 'h':
+		default:
+			usage();
+			exit(1);
+		}
+	}
+
+	die_if_not_passed("ifname", ifname);
+	die_if_not_passed("hwaddr", hwaddr_str);
+
+	err = ether_dev_open(ifname, hwaddr_str, &dev);
 	if (err < 0) {
 		perror("tun_open()");
 		exit(1);
