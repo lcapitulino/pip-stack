@@ -16,6 +16,7 @@
  */
 #include "common.h"
 #include "ether.h"
+#include "arp.h"
 #include "misc.h"
 
 static void usage(void)
@@ -37,6 +38,7 @@ int main(int argc, char *argv[])
 	const char *path_dump_arp;
 	struct ether_frame *frame;
 	struct ether_device dev;
+	struct arp_packet *arp;
 	int opt, err;
 
 	ifname = hwaddr_str = NULL;
@@ -95,8 +97,12 @@ int main(int argc, char *argv[])
 		if (file_dump_eth)
 			ether_dump_frame(file_dump_eth, frame);
 
-		if (file_dump_arp && ether_frame_type(frame) == ETHER_ARP)
-			ether_dump_frame(file_dump_arp, frame);
+		if (ether_frame_type(frame) == ETHER_ARP) {
+			arp = arp_from_ether_frame(frame);
+			if (file_dump_arp)
+				arp_dump_packet(file_dump_arp, arp);
+			arp_packet_free(arp);
+		}
 
 		ether_frame_free(frame);
 	}
