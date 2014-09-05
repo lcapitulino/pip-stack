@@ -118,7 +118,7 @@ void arp_dump_packet(FILE *stream, const struct arp_packet *arp)
 
 	fprintf(stream, "ARP packet:\n\n");
 	fprintf(stream, "   htype: %d\n", arp_get_htype(arp));
-	fprintf(stream, "   ptype: %x\n", arp_get_ptype(arp));
+	fprintf(stream, "   ptype: 0x%x\n", arp_get_ptype(arp));
 	fprintf(stream, "   hlen:  %d\n", arp_get_hlen(arp));
 	fprintf(stream, "   plen:  %d\n", arp_get_plen(arp));
 	fprintf(stream, "   oper:  %d (%s)\n", arp_get_oper(arp),arp_get_oper_str(arp));
