@@ -114,9 +114,29 @@ void ether_frame_free(struct ether_frame *frame)
 	free(frame);
 }
 
+const uint8_t *ether_get_dst(const struct ether_frame *frame)
+{
+	return frame->dst;
+}
+
+const uint8_t *ether_get_src(const struct ether_frame *frame)
+{
+	return frame->src;
+}
+
 uint16_t ether_get_type(const struct ether_frame *frame)
 {
 	return ntohs(*frame->type);
+}
+
+struct skbuf *ether_get_skbuf_ptr(const struct ether_frame *frame)
+{
+	return frame->skbuf;
+}
+
+uint32_t ether_get_data_size(const struct ether_frame *frame)
+{
+	return frame->data_size;
 }
 
 const char *ether_frame_type_str(const struct ether_frame *frame)
@@ -159,15 +179,16 @@ void ether_dump_frame(FILE *stream, const struct ether_frame *frame)
 {
 	char hwaddr_str[32];
 
-	ether_addr_to_str(frame->dst, hwaddr_str, sizeof(hwaddr_str));
+	ether_addr_to_str(ether_get_dst(frame), hwaddr_str, sizeof(hwaddr_str));
 	fprintf(stream, "-> dst: %s\n", hwaddr_str);
 
-	ether_addr_to_str(frame->src, hwaddr_str, sizeof(hwaddr_str));
+	ether_addr_to_str(ether_get_src(frame), hwaddr_str, sizeof(hwaddr_str));
 	fprintf(stream, "-> src: %s\n", hwaddr_str);
 
 	fprintf(stream, "-> type: 0x%x (%s)\n", ether_get_type(frame),
 											ether_frame_type_str(frame));
-	fprintf(stream, "-> data size: %lu\n", (long unsigned int)frame->data_size);
+	fprintf(stream, "-> data size: %lu\n",
+			(long unsigned int) ether_get_data_size(frame));
 
 	fprintf(stream, "\n");
 }

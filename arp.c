@@ -29,7 +29,7 @@ struct arp_packet *arp_from_ether_frame(const struct ether_frame *frame)
 	if (!arp)
 		return NULL;
 
-	arp->skbuf = frame->skbuf;
+	arp->skbuf = ether_get_skbuf_ptr(frame);
 	skbuf_get(arp->skbuf);
 
 	p = (uint8_t *) &arp->skbuf->buf[ETHER_HEADER_SIZE];
