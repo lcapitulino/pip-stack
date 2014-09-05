@@ -44,16 +44,18 @@ struct arp_packet {
 
 struct arp_packet *arp_from_ether_frame(const struct ether_frame *frame);
 void arp_packet_free(struct arp_packet *arp);
+
 uint16_t arp_get_htype(const struct arp_packet *arp);
 uint16_t arp_get_ptype(const struct arp_packet *arp);
 uint8_t arp_get_hlen(const struct arp_packet *arp);
 uint8_t arp_get_plen(const struct arp_packet *arp);
 uint16_t arp_get_oper(const struct arp_packet *arp);
+const char *arp_get_oper_str(const struct arp_packet *arp);
 const uint8_t *arp_get_sha(const struct arp_packet *arp);
 uint32_t arp_get_spa(const struct arp_packet *arp);
 const uint8_t *arp_get_tha(const struct arp_packet *arp);
 uint32_t arp_get_tpa(const struct arp_packet *arp);
-const char *arp_oper_str(const struct arp_packet *arp);
+
 void arp_dump_packet(FILE *stream, const struct arp_packet *arp);
 
 #endif /* ARP_H */
