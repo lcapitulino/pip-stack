@@ -25,18 +25,19 @@ static void usage(void)
 
 int main(int argc, char *argv[])
 {
+	FILE *file_dump_all, *file_dump_arp;
 	const char *ifname, *hwaddr_str;
 	const char *path_dump_all;
-	FILE *file_dump_all;
+	const char *path_dump_arp;
 	struct ether_frame *frame;
 	struct ether_device dev;
 	int opt, err;
 
 	ifname = hwaddr_str = NULL;
-	path_dump_all = NULL;
-	file_dump_all = NULL;
+	path_dump_all = path_dump_arp = NULL;
+	file_dump_all = file_dump_arp = NULL;
 
-	while ((opt = getopt(argc, argv, "i:a:L:h")) != -1) {
+	while ((opt = getopt(argc, argv, "i:a:L:R:h")) != -1) {
 		switch (opt) {
 		case 'i':
 			ifname = optarg;
@@ -46,6 +47,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'L':
 			path_dump_all = optarg;
+			break;
+		case 'R':
+			path_dump_arp = optarg;
 			break;
 		case 'h':
 		default:
@@ -59,6 +63,9 @@ int main(int argc, char *argv[])
 
 	if (path_dump_all)
 		file_dump_all = xfopen(path_dump_all, "a");
+
+	if (path_dump_arp)
+		file_dump_arp = xfopen(path_dump_arp, "a");
 
 	err = ether_dev_open(ifname, hwaddr_str, &dev);
 	if (err < 0) {
@@ -81,6 +88,9 @@ int main(int argc, char *argv[])
 
 		if (file_dump_all)
 			ether_dump_frame(file_dump_all, frame);
+
+		if (file_dump_arp && ether_frame_type(frame) == ETHER_ARP)
+			ether_dump_frame(file_dump_arp, frame);
 
 		ether_frame_free(frame);
 	}
