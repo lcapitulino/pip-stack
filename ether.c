@@ -30,32 +30,33 @@
 int ether_dev_open(const char *ifname, struct ether_device *dev)
 {
 	struct ifreq ifr;
-	int fd, err;
+	int err;
 
 	if (!dev) {
 		errno = EINVAL;
+		dev->fd = -1;
 		return -1;
 	}
 
-	fd = open("/dev/net/tun", O_RDWR);
-	if (fd < 0)
+	dev->fd = open("/dev/net/tun", O_RDWR);
+	if (dev->fd < 0)
 		return -1;
 
 	memset(&ifr, 0, sizeof(ifr));
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 	ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
 
-	err = ioctl(fd, TUNSETIFF, &ifr);
+	err = ioctl(dev->fd, TUNSETIFF, &ifr);
 	if (err < 0)
 		goto out_err;
 
-	dev->fd = fd;
 	return 0;
 
 out_err:
 	err = errno;
-	close(fd);
+	close(dev->fd);
 	errno = err;
+	dev->fd = -1;
 	return -1;
 }
 
