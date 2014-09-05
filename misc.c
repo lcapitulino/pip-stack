@@ -14,6 +14,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <stdio.h>
+#include <stddef.h>
+
 #include "common.h"
 #include "misc.h"
 
@@ -36,4 +39,35 @@ FILE *xfopen(const char *path, const char *mode)
 	}
 
 	return file;
+}
+
+int ipv4_addr_to_str(uint32_t addr, char *str, size_t len)
+{
+	struct in_addr in_addr;
+	const char *p;
+
+	memset(&in_addr, 0, sizeof(in_addr)); /* just in case */
+	in_addr.s_addr = addr;
+	p = inet_ntoa(in_addr);
+	if (!p)
+		return -1;
+
+	strncpy(str, p, len);
+	return 0;
+}
+
+void dump_data(FILE *stream, const uint8_t *data, size_t len)
+{
+	size_t i, cnt;
+
+	for (i = 0; i < len; i++) {
+		fprintf(stream, "%x ", data[i]);
+		if (++cnt == 12) {
+			putc('\n', stream);
+			cnt = 0;
+		}
+	}
+
+	if (i > 0)
+		putc('\n', stream);
 }

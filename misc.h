@@ -18,8 +18,11 @@
 #define XMISC_H
 
 #include <stdio.h>
+#include <stddef.h>
 
 void die_if_not_passed(const char *opt, const char *var);
 FILE *xfopen(const char *path, const char *mode);
+int ipv4_addr_to_str(uint32_t addr, char *str, size_t len);
+void dump_data(FILE *stream, const uint8_t *data, size_t len);
 
 #endif /* XMISC_H */
