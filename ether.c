@@ -130,11 +130,15 @@ const char *ether_frame_type_str(const struct ether_frame *frame)
 	}
 }
 
-void ether_addr_to_str(uint8_t a, uint8_t b, uint8_t c,
-					   uint8_t d, uint8_t e, uint8_t f,
-					   char *str, size_t len)
+void ether_addr_to_str(const uint8_t *hwaddr, char *str, size_t len)
 {
-	snprintf(str, len, "%x:%x:%x:%x:%x:%x", a, b, c, d, e, f);
+	snprintf(str, len, "%x:%x:%x:%x:%x:%x",
+									(unsigned int) hwaddr[0],
+									(unsigned int) hwaddr[1],
+									(unsigned int) hwaddr[2],
+									(unsigned int) hwaddr[3],
+									(unsigned int) hwaddr[4],
+									(unsigned int) hwaddr[5]);
 }
 
 void ether_str_to_addr(const char *hwaddr_str, uint8_t *hwaddr)
@@ -151,16 +155,11 @@ void ether_str_to_addr(const char *hwaddr_str, uint8_t *hwaddr)
 void ether_dump_frame(FILE *stream, const struct ether_frame *frame)
 {
 	char hwaddr_str[32];
-	const uint8_t *p;
 
-	p = frame->dst;
-	ether_addr_to_str(p[0], p[1], p[2], p[3], p[4], p[5],
-				  	  hwaddr_str, sizeof(hwaddr_str));
+	ether_addr_to_str(frame->dst, hwaddr_str, sizeof(hwaddr_str));
 	fprintf(stream, "-> dst: %s\n", hwaddr_str);
 
-	p = frame->src;
-	ether_addr_to_str(p[0], p[1], p[2], p[3], p[4], p[5],
-				  	  hwaddr_str, sizeof(hwaddr_str));
+	ether_addr_to_str(frame->src, hwaddr_str, sizeof(hwaddr_str));
 	fprintf(stream, "-> src: %s\n", hwaddr_str);
 
 	fprintf(stream, "-> type: 0x%x (%s)\n", ether_frame_type(frame),
