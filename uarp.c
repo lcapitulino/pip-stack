@@ -19,14 +19,56 @@
 #include "arp.h"
 #include "misc.h"
 
+static void uarp_dump_loop(struct ether_device *dev,
+						   FILE *file_dump_eth,
+						   FILE *file_dump_arp)
+{
+	struct ether_frame *frame;
+	struct arp_packet *arp;
+	int err;
+
+	if (!file_dump_eth && !file_dump_arp) {
+		fprintf(stderr, "ERROR: dump mode requires a file to dump to\n");
+		exit(1);
+	}
+
+	while (true) {
+		frame = ether_frame_alloc();
+		if (!frame) {
+			perror("ether_frame_alloc()");
+			break;
+		}
+
+		err = ether_dev_recv(dev, frame);
+		if (err < 0) {
+			perror("ether_dev_recv()");
+			break;
+		}
+
+		if (file_dump_eth)
+			ether_dump_frame(file_dump_eth, frame);
+
+		if (ether_get_type(frame) == ETHER_ARP) {
+			arp = arp_from_ether_frame(frame);
+			if (file_dump_arp)
+				arp_dump_packet(file_dump_arp, arp);
+			arp_packet_free(arp);
+		}
+
+		ether_frame_free(frame);
+	}
+
+}
+
 static void usage(void)
 {
 	printf("Usage: uarp -i <interface> -a <hwaddr> ");
-	printf("[-E file] [-R file]\n\n");
+	printf("[-E file] [-R file] [-D]\n\n");
 	printf("   -i <interface>: tap interface to use\n");
 	printf("   -a <hwaddr>   : hardware address\n");
 	printf("   -E <file>     : dump ethernet packates to <file>\n");
 	printf("   -A <file>     : dump ARP packates to <file>\n");
+	printf("   -D            : dump mode (requires -E or -A)\n");
 	printf("\n");
 }
 
@@ -36,16 +78,15 @@ int main(int argc, char *argv[])
 	const char *ifname, *hwaddr_str;
 	const char *path_dump_eth;
 	const char *path_dump_arp;
-	struct ether_frame *frame;
 	struct ether_device dev;
-	struct arp_packet *arp;
+	bool dump_mode = false;
 	int opt, err;
 
 	ifname = hwaddr_str = NULL;
 	path_dump_eth = path_dump_arp = NULL;
 	file_dump_eth = file_dump_arp = NULL;
 
-	while ((opt = getopt(argc, argv, "i:a:E:R:h")) != -1) {
+	while ((opt = getopt(argc, argv, "i:a:E:R:hD")) != -1) {
 		switch (opt) {
 		case 'i':
 			ifname = optarg;
@@ -58,6 +99,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'R':
 			path_dump_arp = optarg;
+			break;
+		case 'D':
+			dump_mode = true;
 			break;
 		case 'h':
 		default:
@@ -81,32 +125,12 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	while (true) {
-		frame = ether_frame_alloc();
-		if (!frame) {
-			perror("ether_frame_alloc()");
-			break;
-		}
-
-		err = ether_dev_recv(&dev, frame);
-		if (err < 0) {
-			perror("ether_dev_recv()");
-			break;
-		}
-
-		if (file_dump_eth)
-			ether_dump_frame(file_dump_eth, frame);
-
-		if (ether_get_type(frame) == ETHER_ARP) {
-			arp = arp_from_ether_frame(frame);
-			if (file_dump_arp)
-				arp_dump_packet(file_dump_arp, arp);
-			arp_packet_free(arp);
-		}
-
-		ether_frame_free(frame);
+	if (dump_mode) {
+		uarp_dump_loop(&dev, file_dump_eth, file_dump_arp);
+		goto out;
 	}
 
+out:
 	ether_dev_close(&dev);
 	return 0;
 }
