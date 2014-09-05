@@ -5,11 +5,13 @@
 #include <stdint.h>
 
 struct skbuf {
+	int count;
 	size_t size;
 	uint8_t *buf;
 };
 
 struct skbuf *skbuf_alloc(size_t data_size);
-void skbuf_free(struct skbuf *sk);
+struct skbuf *skbuf_get(struct skbuf *sk);
+void skbuf_put(struct skbuf *sk);
 
 #endif /* SKBUF_H */

@@ -16,15 +16,27 @@ struct skbuf *skbuf_alloc(size_t data_size)
 		return NULL;
 	}
 
+	sk->count = 1;
 	sk->size = data_size;
 	memset(sk->buf, 0, data_size);
 
 	return sk;
 }
 
-void skbuf_free(struct skbuf *sk)
+struct skbuf *skbuf_get(struct skbuf *sk)
 {
-	if (sk) {
+	sk->count++;
+	return sk;
+}
+
+void skbuf_put(struct skbuf *sk)
+{
+	if (!sk)
+		return;
+
+	assert(sk->count >= 0);
+
+	if (--sk->count == 0) {
 		free(sk->buf);
 		free(sk);
 	}

@@ -87,7 +87,7 @@ struct ether_frame *ether_frame_alloc(void)
 
 void ether_frame_free(struct ether_frame *frame)
 {
-	skbuf_free(frame->skbuf);
+	skbuf_put(frame->skbuf);
 	free(frame);
 }
 
