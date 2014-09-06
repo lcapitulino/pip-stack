@@ -37,6 +37,7 @@
 struct ether_device {
 	int fd;
 	uint8_t hwaddr[6];
+	uint32_t ipv4_addr; /* XXX: should this be part of the IP module? */
 };
 
 struct ether_frame {
@@ -53,6 +54,7 @@ int ether_dev_open(const char *ifname, const char *hwaddr_str,
 				   struct ether_device *dev);
 void ether_dev_close(struct ether_device *dev);
 struct ether_frame *ether_dev_recv(struct ether_device *dev);
+int ether_dev_set_ipv4_addr(struct ether_device *dev,const char *ipv4_addr_str);
 
 void ether_frame_free(struct ether_frame *frame);
 
