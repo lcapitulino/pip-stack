@@ -25,6 +25,7 @@
 
 #include "ether.h"
 #include "common.h"
+#include "misc.h"
 
 int ether_dev_open(const char *ifname, const char *hwaddr_str,
 				   struct ether_device *dev)
@@ -69,15 +70,24 @@ void ether_dev_close(struct ether_device *dev)
 	dev->fd = -1;
 }
 
-int ether_dev_recv(struct ether_device *dev, struct ether_frame *frame)
+struct ether_frame *ether_dev_recv(struct ether_device *dev)
 {
+	struct ether_frame *frame;
 	ssize_t ret;
 	uint8_t *p;
 
+	frame = mallocz(sizeof(struct ether_frame));
+	if (!frame)
+		return NULL;
+
 	p = frame->buf;
 	ret = read(dev->fd, p, ETHER_FRAME_SIZE);
-	if (ret < 0)
-		return -1;
+	if (ret < 0) {
+		ret = errno;
+		free(frame);
+		errno = ret;
+		return NULL;
+	}
 
 	frame->dst =  (uint8_t *)  &p[0];
 	frame->src =  (uint8_t *)  &p[6];
@@ -85,18 +95,6 @@ int ether_dev_recv(struct ether_device *dev, struct ether_frame *frame)
 	frame->data_start = (uint8_t *) &p[ETHER_HEADER_SIZE];
 	frame->data_size = ret - ETHER_HEADER_SIZE;
 
-	return 0;
-}
-
-struct ether_frame *ether_frame_alloc(void)
-{
-	struct ether_frame *frame;
-
-	frame = malloc(sizeof(*frame));
-	if (!frame)
-		return NULL;
-
-	memset(frame, 0, sizeof(*frame));
 	return frame;
 }
 

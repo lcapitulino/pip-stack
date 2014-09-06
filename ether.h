@@ -52,9 +52,8 @@ struct ether_frame {
 int ether_dev_open(const char *ifname, const char *hwaddr_str,
 				   struct ether_device *dev);
 void ether_dev_close(struct ether_device *dev);
-int ether_dev_recv(struct ether_device *dev, struct ether_frame *frame);
+struct ether_frame *ether_dev_recv(struct ether_device *dev);
 
-struct ether_frame *ether_frame_alloc(void);
 void ether_frame_free(struct ether_frame *frame);
 
 const uint8_t *ether_get_dst(const struct ether_frame *frame);

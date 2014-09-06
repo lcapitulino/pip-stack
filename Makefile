@@ -13,7 +13,7 @@ skbuf.o: skbuf.c skbuf.h common.h
 arp.o: arp.c arp.h common.h misc.h ether.h
 	$(CC) $(CFLAGS) -c $<
 
-ether.o: ether.c ether.h common.h
+ether.o: ether.c ether.h common.h misc.h
 	$(CC) $(CFLAGS) -c $<
 
 uarp.o: uarp.c common.h ether.h arp.h misc.h

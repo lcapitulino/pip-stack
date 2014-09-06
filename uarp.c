@@ -42,7 +42,6 @@ static void uarp_dump_loop(struct ether_device *dev,
 {
 	struct ether_frame *frame;
 	struct arp_packet *arp;
-	int err;
 
 	if (!file_dump_eth && !file_dump_arp) {
 		fprintf(stderr, "ERROR: dump mode requires a file to dump to\n");
@@ -50,14 +49,8 @@ static void uarp_dump_loop(struct ether_device *dev,
 	}
 
 	while (true) {
-		frame = ether_frame_alloc();
+		frame = ether_dev_recv(dev);
 		if (!frame) {
-			perror("ether_frame_alloc()");
-			break;
-		}
-
-		err = ether_dev_recv(dev, frame);
-		if (err < 0) {
 			perror("ether_dev_recv()");
 			break;
 		}
