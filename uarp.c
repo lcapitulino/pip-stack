@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
 	if (config.path_dump_arp)
 		file_dump_arp = xfopen(config.path_dump_arp, "a");
 
-	err = ether_dev_open(config.ifname, config.hwaddr_str, &dev);
+	err = ether_dev_open(&dev, config.ifname, config.hwaddr_str);
 	if (err < 0) {
 		perror("tun_open()");
 		exit(1);

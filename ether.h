@@ -49,9 +49,8 @@ struct ether_frame {
 	uint8_t buf[ETHER_FRAME_SIZE];
 };
 
-
-int ether_dev_open(const char *ifname, const char *hwaddr_str,
-				   struct ether_device *dev);
+int ether_dev_open(struct ether_device *dev,
+				   const char *ifname, const char *hwaddr_str);
 void ether_dev_close(struct ether_device *dev);
 struct ether_frame *ether_dev_recv(struct ether_device *dev);
 int ether_dev_set_ipv4_addr(struct ether_device *dev,const char *ipv4_addr_str);

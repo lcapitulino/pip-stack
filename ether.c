@@ -27,8 +27,8 @@
 #include "common.h"
 #include "misc.h"
 
-int ether_dev_open(const char *ifname, const char *hwaddr_str,
-				   struct ether_device *dev)
+int ether_dev_open(struct ether_device *dev,
+				   const char *ifname, const char *hwaddr_str)
 {
 	struct ifreq ifr;
 	int err;
