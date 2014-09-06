@@ -21,6 +21,7 @@
 #include "common.h"
 #include "ether.h"
 #include "arp.h"
+#include "ipv4.h"
 #include "misc.h"
 
 struct uarp_config {
@@ -32,9 +33,14 @@ struct uarp_config {
 	bool dump_mode;
 };
 
+struct uarp_protocol_stack {
+	struct ether_device *dev;
+	struct ipv4_object  *ipv4;
+};
+
 struct uarp_shell_cmds {
 	const char *name;
-	void (*func)(struct ether_device *dev, const char *cmd);
+	void (*func)(struct uarp_protocol_stack *dev, const char *cmd);
 };
 
 static void uarp_dump_loop(struct ether_device *dev,
@@ -68,17 +74,17 @@ static void uarp_dump_loop(struct ether_device *dev,
 
 		ether_frame_free(frame);
 	}
-
 }
 
-static void uarp_shell_help(struct ether_device *dev, const char *cmd)
+static void uarp_shell_help(struct uarp_protocol_stack *stack, const char *cmd)
 {
 	printf("\nuarp shell commands:\n\n");
 	printf("   help: this text\n");
 	printf("\n");
 }
 
-static void uarp_shell_arp_request(struct ether_device *dev, const char *cmd)
+static void uarp_shell_arp_request(struct uarp_protocol_stack *stack,
+								   const char *cmd)
 {
 	struct arp_packet *arp;
 	in_addr_t addr;
@@ -96,7 +102,8 @@ static void uarp_shell_arp_request(struct ether_device *dev, const char *cmd)
 		return;
 	}
 
-	arp = arp_build_request(ETHER_TYPE_IPV4, dev->hwaddr, dev->ipv4_addr, addr);
+	arp = arp_build_request(ETHER_TYPE_IPV4, stack->dev->hwaddr,
+							stack->ipv4->ipv4_addr, addr);
 	if (!arp) {
 		printf("ERROR: failed to build ARP request: %s\n", strerror(errno));
 		return;
@@ -106,7 +113,7 @@ static void uarp_shell_arp_request(struct ether_device *dev, const char *cmd)
 	arp_packet_free(arp);
 }
 
-static void uarp_shell(struct ether_device *dev,
+static void uarp_shell(struct uarp_protocol_stack *stack,
 					   FILE *file_dump_eth,
 					   FILE *file_dump_arp)
 {
@@ -131,7 +138,7 @@ static void uarp_shell(struct ether_device *dev,
 
 		for (i = 0; shell_cmds[i].name; i++) {
 			if (!strncmp(shell_cmds[i].name, cmd, strlen(shell_cmds[i].name))) {
-				shell_cmds[i].func(dev, cmd);
+				shell_cmds[i].func(stack, cmd);
 				break;
 			}
 		}
@@ -195,6 +202,7 @@ static void uarp_parse_cmdline(int argc, char *argv[],
 int main(int argc, char *argv[])
 {
 	FILE *file_dump_eth, *file_dump_arp;
+	struct uarp_protocol_stack stack;
 	struct uarp_config config;
 	struct ether_device dev;
 	int err;
@@ -219,16 +227,20 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	memset(&stack, 0, sizeof(stack));
+	stack.dev = &dev;
+
 	if (config.dump_mode) {
-		uarp_dump_loop(&dev, file_dump_eth, file_dump_arp);
+		uarp_dump_loop(stack.dev, file_dump_eth, file_dump_arp);
 	} else {
-		err = ether_dev_set_ipv4_addr(&dev, config.ipv4_addr_str);
-		if (err < 0) {
-			perror("ether_set_ipv4_addr()");
+		stack.ipv4 = ipv4_object_alloc(config.ipv4_addr_str);
+		if (!stack.ipv4) {
+			perror("ipv4_object_alloc()");
 			exit(1);
 		}
 
-		uarp_shell(&dev, file_dump_eth, file_dump_arp);
+		uarp_shell(&stack, file_dump_eth, file_dump_arp);
+		ipv4_object_free(stack.ipv4);
 	}
 
 	ether_dev_close(&dev);

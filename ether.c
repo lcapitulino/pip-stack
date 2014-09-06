@@ -70,18 +70,6 @@ void ether_dev_close(struct ether_device *dev)
 	dev->fd = -1;
 }
 
-int ether_dev_set_ipv4_addr(struct ether_device *dev, const char *ipv4_addr_str)
-{
-	in_addr_t addr;
-
-	addr = inet_network(ipv4_addr_str);
-	if (addr == -1)
-		return -1;
-
-	memcpy(&dev->ipv4_addr, &addr, sizeof(dev->ipv4_addr));
-	return 0;
-}
-
 struct ether_frame *ether_dev_recv(struct ether_device *dev)
 {
 	struct ether_frame *frame;
