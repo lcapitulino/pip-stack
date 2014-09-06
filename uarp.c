@@ -59,7 +59,7 @@ static void uarp_dump_loop(struct ether_device *dev,
 		if (file_dump_eth)
 			ether_dump_frame(file_dump_eth, frame);
 
-		if (ether_get_type(frame) == ETHER_ARP) {
+		if (ether_get_type(frame) == ETHER_TYPE_ARP) {
 			arp = arp_from_ether_frame(frame);
 			if (file_dump_arp)
 				arp_dump_packet(file_dump_arp, arp);
@@ -96,7 +96,7 @@ static void uarp_shell_arp_request(struct ether_device *dev, const char *cmd)
 		return;
 	}
 
-	arp = arp_build_request(ETHER_IPV4, dev->hwaddr, dev->ipv4_addr, addr);
+	arp = arp_build_request(ETHER_TYPE_IPV4, dev->hwaddr, dev->ipv4_addr, addr);
 	if (!arp) {
 		printf("ERROR: failed to build ARP request: %s\n", strerror(errno));
 		return;

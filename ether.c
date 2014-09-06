@@ -138,11 +138,11 @@ const uint8_t *ether_get_data_start(const struct ether_frame *frame)
 const char *ether_get_type_str(const struct ether_frame *frame)
 {
 	switch (ether_get_type(frame)) {
-	case ETHER_IPV4:
+	case ETHER_TYPE_IPV4:
 		return "ipv4";
-	case ETHER_ARP:
+	case ETHER_TYPE_ARP:
 		return "arp";
-	case ETHER_IPV6:
+	case ETHER_TYPE_IPV6:
 		return "ipv6";
 	default:
 		return "unknown";
