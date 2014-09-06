@@ -80,6 +80,7 @@ static void uarp_shell_help(struct ether_device *dev, const char *cmd)
 
 static void uarp_shell_arp_request(struct ether_device *dev, const char *cmd)
 {
+	struct arp_packet *arp;
 	in_addr_t addr;
 	const char *p;
 
@@ -95,15 +96,14 @@ static void uarp_shell_arp_request(struct ether_device *dev, const char *cmd)
 		return;
 	}
 
-	printf("--> 0x%x\n", addr);
-	/*
-	 * Next steps:
-	 *
-	 * 1. add arp_send_request(dev, hwaddr, addr)
-	 * 2. listen incoming packets
-	 * 3. look for our reply
-	 * 4. print it
-	 */
+	arp = arp_build_request(ETHER_IPV4, dev->hwaddr, dev->ipv4_addr, addr);
+	if (!arp) {
+		printf("ERROR: failed to build ARP request: %s\n", strerror(errno));
+		return;
+	}
+
+	arp_dump_packet(stdout, arp);
+	arp_packet_free(arp);
 }
 
 static void uarp_shell(struct ether_device *dev,
