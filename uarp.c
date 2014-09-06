@@ -84,6 +84,34 @@ static void uarp_shell_help(struct ether_device *dev, const char *cmd)
 	printf("\n");
 }
 
+static void uarp_shell_arp_request(struct ether_device *dev, const char *cmd)
+{
+	in_addr_t addr;
+	const char *p;
+
+	p = strchr(cmd, ' ');
+	if (!p) {
+		printf("ERROR: bad arp request command: %s\n", cmd);
+		return;
+	}
+
+	addr = inet_network(++p);
+	if (addr == -1) {
+		printf("ERROR: bad IPv4 address: %s\n", p);
+		return;
+	}
+
+	printf("--> 0x%x\n", addr);
+	/*
+	 * Next steps:
+	 *
+	 * 1. add arp_send_request(dev, hwaddr, addr)
+	 * 2. listen incoming packets
+	 * 3. look for our reply
+	 * 4. print it
+	 */
+}
+
 static void uarp_shell(struct ether_device *dev,
 					   FILE *file_dump_eth,
 					   FILE *file_dump_arp)
@@ -91,6 +119,7 @@ static void uarp_shell(struct ether_device *dev,
 	const struct uarp_shell_cmds shell_cmds[] = {
 		{ "help", uarp_shell_help },
 		{ "?", uarp_shell_help },
+		{ "arp-request", uarp_shell_arp_request },
 		{ .name = NULL }
 	};
 	char *cmd;
