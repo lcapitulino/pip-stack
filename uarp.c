@@ -164,25 +164,25 @@ static void uarp_parse_cmdline(int argc, char *argv[],
 
 	memset(config, 0, sizeof(*config));
 
-	while ((opt = getopt(argc, argv, "i:a:E:R:hDI:")) != -1) {
+	while ((opt = getopt(argc, argv, "a:DE:hi:I:R:")) != -1) {
 		switch (opt) {
-		case 'i':
-			config->ifname = optarg;
-			break;
 		case 'a':
 			config->hwaddr_str = optarg;
 			break;
+		case 'D':
+			config->dump_mode = true;
+			break;
 		case 'E':
 			config->path_dump_eth = optarg;
+			break;
+		case 'i':
+			config->ifname = optarg;
 			break;
 		case 'I':
 			config->ipv4_addr_str = optarg;
 			break;
 		case 'R':
 			config->path_dump_arp = optarg;
-			break;
-		case 'D':
-			config->dump_mode = true;
 			break;
 		case 'h':
 		default:
@@ -204,7 +204,8 @@ int main(int argc, char *argv[])
 	uarp_parse_cmdline(argc, argv, &config);
 	die_if_not_passed("ifname", config.ifname);
 	die_if_not_passed("hwaddr", config.hwaddr_str);
-	die_if_not_passed("ipv4addr", config.ipv4_addr_str);
+	if (!config.dump_mode)
+		die_if_not_passed("ipv4addr", config.ipv4_addr_str);
 
 	if (config.path_dump_eth)
 		file_dump_eth = xfopen(config.path_dump_eth, "a");
@@ -218,15 +219,15 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	err = ether_dev_set_ipv4_addr(&dev, config.ipv4_addr_str);
-	if (err < 0) {
-		perror("ether_set_ipv4_addr()");
-		exit(1);
-	}
-
 	if (config.dump_mode) {
 		uarp_dump_loop(&dev, file_dump_eth, file_dump_arp);
 	} else {
+		err = ether_dev_set_ipv4_addr(&dev, config.ipv4_addr_str);
+		if (err < 0) {
+			perror("ether_set_ipv4_addr()");
+			exit(1);
+		}
+
 		uarp_shell(&dev, file_dump_eth, file_dump_arp);
 	}
 
