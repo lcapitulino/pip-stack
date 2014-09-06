@@ -79,7 +79,8 @@ static void uarp_dump_loop(struct ether_device *dev,
 static void uarp_shell_help(struct uarp_protocol_stack *stack, const char *cmd)
 {
 	printf("\nuarp shell commands:\n\n");
-	printf("   help: this text\n");
+	printf(" arp-request <ipv4-addr>: send an ARP request to learn ipv4-addr\n");
+	printf(" help: this text\n");
 	printf("\n");
 }
 
@@ -122,10 +123,11 @@ static void uarp_shell(struct uarp_protocol_stack *stack,
 		{ "?", uarp_shell_help },
 		{ "arp-request", uarp_shell_arp_request },
 		{ .name = NULL }
-	};
+	}, *p;
 	char *cmd;
 	int i;
 
+	p = shell_cmds;
 	while (true) {
 		cmd = readline("uarp> ");
 		if (!cmd) {
@@ -136,9 +138,9 @@ static void uarp_shell(struct uarp_protocol_stack *stack,
 			continue;
 		}
 
-		for (i = 0; shell_cmds[i].name; i++) {
-			if (!strncmp(shell_cmds[i].name, cmd, strlen(shell_cmds[i].name))) {
-				shell_cmds[i].func(stack, cmd);
+		for (i = 0; p[i].name; i++) {
+			if (!strncmp(p[i].name, cmd, strlen(p[i].name))) {
+				p[i].func(stack, cmd);
 				break;
 			}
 		}
