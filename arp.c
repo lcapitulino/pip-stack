@@ -33,7 +33,7 @@ struct arp_packet *arp_from_ether_frame(const struct ether_frame *frame)
 	if (!arp)
 		return NULL;
 
-	memcpy(arp->buf, frame->data_start, ARP_PACKET_SIZE);
+	memcpy(arp->buf, ether_get_data_start(frame), ARP_PACKET_SIZE);
 
 	p = arp->buf;
 	arp->htype = (uint16_t *) &p[0];

@@ -118,6 +118,11 @@ uint16_t ether_get_type(const struct ether_frame *frame)
 	return ntohs(*frame->type);
 }
 
+const uint8_t *ether_get_data_start(const struct ether_frame *frame)
+{
+	return frame->data_start;
+}
+
 const char *ether_get_type_str(const struct ether_frame *frame)
 {
 	switch (ether_get_type(frame)) {
