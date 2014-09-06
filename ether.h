@@ -21,19 +21,6 @@
 #include <stddef.h>
 #include <stdio.h>
 
-struct ether_device {
-	int fd;
-	uint8_t hwaddr[6];
-};
-
-struct ether_frame {
-	const uint8_t *dst;
-	const uint8_t *src;
-	const uint16_t *type;
-	uint32_t data_size;
-	struct skbuf *skbuf;
-};
-
 /*
  * This is the maxium size for what the 802.3 standard calls
  * a "basic frame". There are others frame types (Q-tagged
@@ -46,6 +33,21 @@ struct ether_frame {
 #define ETHER_IPV4 0x0800
 #define ETHER_ARP  0x0806
 #define ETHER_IPV6 0x86DD
+
+struct ether_device {
+	int fd;
+	uint8_t hwaddr[6];
+};
+
+struct ether_frame {
+	uint8_t *dst;
+	uint8_t *src;
+	uint16_t *type;
+	uint8_t *data_start;
+	uint32_t data_size;
+	uint8_t buf[ETHER_FRAME_SIZE];
+};
+
 
 int ether_dev_open(const char *ifname, const char *hwaddr_str,
 				   struct ether_device *dev);

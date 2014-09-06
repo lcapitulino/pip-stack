@@ -20,20 +20,8 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "ether.h"
-#include "skbuf.h"
 
-struct arp_packet {
-	const uint16_t *htype;   /* hardware type */
-	const uint16_t *ptype;   /* protocol type */
-	const uint8_t  *hlen;    /* hardware addr length */
-	const uint8_t  *plen;    /* protocol address length */
-	const uint16_t *oper;    /* operation */
-	const uint8_t  *sha;     /* sender hardware address */
-	const uint32_t *spa;     /* sender protocol address */
-	const uint8_t  *tha;     /* target hardware address */
-	const uint32_t *tpa;     /* target protocol address */
-	struct skbuf *skbuf;
-};
+#define ARP_PACKET_SIZE 28
 
 /* ARP Hardware type - only ethernet is supported for now */
 #define ARP_HTYPE_ETH 1
@@ -41,6 +29,19 @@ struct arp_packet {
 /* ARP Operations */
 #define ARP_OP_REQ 1
 #define ARP_OP_REP 2
+
+struct arp_packet {
+	uint16_t *htype;   /* hardware type */
+	uint16_t *ptype;   /* protocol type */
+	uint8_t  *hlen;    /* hardware addr length */
+	uint8_t  *plen;    /* protocol address length */
+	uint16_t *oper;    /* operation */
+	uint8_t  *sha;     /* sender hardware address */
+	uint32_t *spa;     /* sender protocol address */
+	uint8_t  *tha;     /* target hardware address */
+	uint32_t *tpa;     /* target protocol address */
+	uint8_t buf[ARP_PACKET_SIZE];
+};
 
 struct arp_packet *arp_from_ether_frame(const struct ether_frame *frame);
 void arp_packet_free(struct arp_packet *arp);

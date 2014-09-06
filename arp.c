@@ -17,41 +17,48 @@
 #include "common.h"
 #include "misc.h"
 #include "ether.h"
-#include "skbuf.h"
 #include "arp.h"
+
+static struct arp_packet *arp_packet_alloc(void)
+{
+	struct arp_packet *arp;
+
+	arp = malloc(sizeof(*arp));
+	if (!arp)
+		return NULL;
+
+	memset(arp, 0, sizeof(*arp));
+	return arp;
+}
 
 struct arp_packet *arp_from_ether_frame(const struct ether_frame *frame)
 {
 	struct arp_packet *arp;
 	uint8_t *p;
 
-	arp = malloc(sizeof(*arp));
+	arp = arp_packet_alloc();
 	if (!arp)
 		return NULL;
 
-	arp->skbuf = ether_get_skbuf_ptr(frame);
-	skbuf_get(arp->skbuf);
+	memcpy(arp->buf, frame->data_start, ARP_PACKET_SIZE);
 
-	p = (uint8_t *) &skbuf_get_data_ptr(arp->skbuf)[ETHER_HEADER_SIZE];
-	arp->htype = (const uint16_t *) &p[0];
-	arp->ptype = (const uint16_t *) &p[2];
-	arp->hlen  = (const uint8_t *)  &p[4];
-	arp->plen  = (const uint8_t *)  &p[5];
-	arp->oper  = (const uint16_t *) &p[6];
-	arp->sha   = (const uint8_t *)  &p[8];
-	arp->spa   = (const uint32_t *) &p[14];
-	arp->tha   = (const uint8_t *)  &p[18];
-	arp->tpa   = (const uint32_t *) &p[24];
+	p = arp->buf;
+	arp->htype = (uint16_t *) &p[0];
+	arp->ptype = (uint16_t *) &p[2];
+	arp->hlen  = (uint8_t *)  &p[4];
+	arp->plen  = (uint8_t *)  &p[5];
+	arp->oper  = (uint16_t *) &p[6];
+	arp->sha   = (uint8_t *)  &p[8];
+	arp->spa   = (uint32_t *) &p[14];
+	arp->tha   = (uint8_t *)  &p[18];
+	arp->tpa   = (uint32_t *) &p[24];
 
 	return arp;
 }
 
 void arp_packet_free(struct arp_packet *arp)
 {
-	if (arp) {
-		skbuf_put(arp->skbuf);
-		free(arp);
-	}
+	free(arp);
 }
 
 uint16_t arp_get_htype(const struct arp_packet *arp)

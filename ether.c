@@ -24,7 +24,6 @@
 #include <linux/if_tun.h>
 
 #include "ether.h"
-#include "skbuf.h"
 #include "common.h"
 
 int ether_dev_open(const char *ifname, const char *hwaddr_str,
@@ -75,14 +74,15 @@ int ether_dev_recv(struct ether_device *dev, struct ether_frame *frame)
 	ssize_t ret;
 	uint8_t *p;
 
-	p = skbuf_get_data_ptr(frame->skbuf);
+	p = frame->buf;
 	ret = read(dev->fd, p, ETHER_FRAME_SIZE);
 	if (ret < 0)
 		return -1;
 
-	frame->dst =  (const uint8_t *)  &p[0];
-	frame->src =  (const uint8_t *)  &p[6];
-	frame->type = (const uint16_t *) &p[12];
+	frame->dst =  (uint8_t *)  &p[0];
+	frame->src =  (uint8_t *)  &p[6];
+	frame->type = (uint16_t *) &p[12];
+	frame->data_start = (uint8_t *) &p[ETHER_HEADER_SIZE];
 	frame->data_size = ret - ETHER_HEADER_SIZE;
 
 	return 0;
@@ -97,20 +97,11 @@ struct ether_frame *ether_frame_alloc(void)
 		return NULL;
 
 	memset(frame, 0, sizeof(*frame));
-
-	frame->skbuf = skbuf_alloc(ETHER_FRAME_SIZE);
-	if (!frame->skbuf) {
-		free(frame);
-		errno = ENOMEM;
-		return NULL;
-	}
-
 	return frame;
 }
 
 void ether_frame_free(struct ether_frame *frame)
 {
-	skbuf_put(frame->skbuf);
 	free(frame);
 }
 
@@ -141,11 +132,6 @@ const char *ether_get_type_str(const struct ether_frame *frame)
 	default:
 		return "unknown";
 	}
-}
-
-struct skbuf *ether_get_skbuf_ptr(const struct ether_frame *frame)
-{
-	return frame->skbuf;
 }
 
 uint32_t ether_get_data_size(const struct ether_frame *frame)

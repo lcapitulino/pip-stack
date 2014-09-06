@@ -10,16 +10,16 @@ misc.o: misc.c misc.h common.h
 skbuf.o: skbuf.c skbuf.h common.h
 	$(CC) $(CFLAGS) -c $<
 
-arp.o: arp.c arp.h common.h misc.h ether.h skbuf.h
+arp.o: arp.c arp.h common.h misc.h ether.h
 	$(CC) $(CFLAGS) -c $<
 
-ether.o: ether.c ether.h skbuf.h common.h
+ether.o: ether.c ether.h common.h
 	$(CC) $(CFLAGS) -c $<
 
 uarp.o: uarp.c common.h ether.h arp.h misc.h
 	$(CC) $(CFLAGS) -c $<
 
-uarp: uarp.o ether.o skbuf.o misc.o arp.o -lefence -lreadline
+uarp: uarp.o ether.o misc.o arp.o -lefence -lreadline
 	$(CC) -o $@ $+
 
 clean:
