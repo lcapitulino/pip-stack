@@ -28,6 +28,7 @@ struct uarp_config {
 	const char *hwaddr_str;
 	const char *path_dump_eth;
 	const char *path_dump_arp;
+	const char *ipv4_addr_str;
 	bool dump_mode;
 };
 
@@ -145,13 +146,14 @@ static void uarp_shell(struct ether_device *dev,
 
 static void usage(void)
 {
-	printf("Usage: uarp -i <interface> -a <hwaddr> ");
+	printf("Usage: uarp -i <interface> -a <hwaddr> -I <ipv4addr>");
 	printf("[-E file] [-R file] [-D]\n\n");
 	printf("   -i <interface>: tap interface to use\n");
 	printf("   -a <hwaddr>   : hardware address\n");
 	printf("   -E <file>     : dump ethernet packates to <file>\n");
 	printf("   -A <file>     : dump ARP packates to <file>\n");
 	printf("   -D            : dump mode (requires -E or -A)\n");
+	printf("   -I            : IPv4 address\n");
 	printf("\n");
 }
 
@@ -162,7 +164,7 @@ static void uarp_parse_cmdline(int argc, char *argv[],
 
 	memset(config, 0, sizeof(*config));
 
-	while ((opt = getopt(argc, argv, "i:a:E:R:hD")) != -1) {
+	while ((opt = getopt(argc, argv, "i:a:E:R:hDI:")) != -1) {
 		switch (opt) {
 		case 'i':
 			config->ifname = optarg;
@@ -172,6 +174,9 @@ static void uarp_parse_cmdline(int argc, char *argv[],
 			break;
 		case 'E':
 			config->path_dump_eth = optarg;
+			break;
+		case 'I':
+			config->ipv4_addr_str = optarg;
 			break;
 		case 'R':
 			config->path_dump_arp = optarg;
@@ -199,6 +204,7 @@ int main(int argc, char *argv[])
 	uarp_parse_cmdline(argc, argv, &config);
 	die_if_not_passed("ifname", config.ifname);
 	die_if_not_passed("hwaddr", config.hwaddr_str);
+	die_if_not_passed("ipv4addr", config.ipv4_addr_str);
 
 	if (config.path_dump_eth)
 		file_dump_eth = xfopen(config.path_dump_eth, "a");
@@ -209,6 +215,12 @@ int main(int argc, char *argv[])
 	err = ether_dev_open(config.ifname, config.hwaddr_str, &dev);
 	if (err < 0) {
 		perror("tun_open()");
+		exit(1);
+	}
+
+	err = ether_dev_set_ipv4_addr(&dev, config.ipv4_addr_str);
+	if (err < 0) {
+		perror("ether_set_ipv4_addr()");
 		exit(1);
 	}
 
