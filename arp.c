@@ -21,14 +21,7 @@
 
 static struct arp_packet *arp_packet_alloc(void)
 {
-	struct arp_packet *arp;
-
-	arp = malloc(sizeof(*arp));
-	if (!arp)
-		return NULL;
-
-	memset(arp, 0, sizeof(*arp));
-	return arp;
+	return mallocz(sizeof(struct arp_packet));
 }
 
 struct arp_packet *arp_from_ether_frame(const struct ether_frame *frame)
