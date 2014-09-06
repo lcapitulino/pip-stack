@@ -46,6 +46,9 @@ struct arp_packet {
 struct arp_packet *arp_from_ether_frame(const struct ether_frame *frame);
 void arp_packet_free(struct arp_packet *arp);
 
+struct arp_packet *arp_build_request(uint16_t ptype, uint8_t *sha,
+									 uint32_t spa, uint32_t tpa);
+
 uint16_t arp_get_htype(const struct arp_packet *arp);
 uint16_t arp_get_ptype(const struct arp_packet *arp);
 uint8_t arp_get_hlen(const struct arp_packet *arp);

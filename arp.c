@@ -54,6 +54,27 @@ struct arp_packet *arp_from_ether_frame(const struct ether_frame *frame)
 	return arp;
 }
 
+struct arp_packet *arp_build_request(uint16_t ptype, uint8_t *sha,
+									 uint32_t spa, uint32_t tpa)
+{
+	struct arp_packet *arp;
+
+	arp = arp_packet_alloc();
+	if (!arp)
+		return NULL;
+
+	*arp->htype = htons(1);
+	*arp->ptype = htons(ptype);
+	*arp->hlen =  6;
+	*arp->plen =  4;
+	*arp->oper =  htons(1);
+	memcpy(arp->sha, sha, 6);
+	*arp->spa = htonl(spa);
+	*arp->tpa = htonl(tpa);
+
+	return arp;
+}
+
 void arp_packet_free(struct arp_packet *arp)
 {
 	free(arp);
