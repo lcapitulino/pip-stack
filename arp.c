@@ -21,19 +21,12 @@
 
 static struct arp_packet *arp_packet_alloc(void)
 {
-	return mallocz(sizeof(struct arp_packet));
-}
-
-struct arp_packet *arp_from_ether_frame(const struct ether_frame *frame)
-{
 	struct arp_packet *arp;
 	uint8_t *p;
 
-	arp = arp_packet_alloc();
+	arp = mallocz(sizeof(struct arp_packet));
 	if (!arp)
 		return NULL;
-
-	memcpy(arp->buf, ether_get_data_start(frame), ARP_PACKET_SIZE);
 
 	p = arp->buf;
 	arp->htype = (uint16_t *) &p[0];
@@ -46,6 +39,18 @@ struct arp_packet *arp_from_ether_frame(const struct ether_frame *frame)
 	arp->tha   = (uint8_t *)  &p[18];
 	arp->tpa   = (uint32_t *) &p[24];
 
+	return arp;
+}
+
+struct arp_packet *arp_from_ether_frame(const struct ether_frame *frame)
+{
+	struct arp_packet *arp;
+
+	arp = arp_packet_alloc();
+	if (!arp)
+		return NULL;
+
+	memcpy(arp->buf, ether_get_data_start(frame), ARP_PACKET_SIZE);
 	return arp;
 }
 
