@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
 
 	err = ether_dev_open(&dev, config.ifname, config.hwaddr_str);
 	if (err < 0) {
-		perror("tun_open()");
+		perror("ether_dev_open()");
 		exit(1);
 	}
 
