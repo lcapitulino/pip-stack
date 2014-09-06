@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stddef.h>
 
+void *mallocz(size_t size);
 void die_if_not_passed(const char *opt, const char *var);
 FILE *xfopen(const char *path, const char *mode);
 int ipv4_addr_to_str(uint32_t addr, char *str, size_t len);

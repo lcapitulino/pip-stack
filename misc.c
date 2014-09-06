@@ -20,6 +20,17 @@
 #include "common.h"
 #include "misc.h"
 
+void *mallocz(size_t size)
+{
+	void *p;
+
+	p = malloc(size);
+	if (p)
+		memset(p, 0, size);
+
+	return p;
+}
+
 void die_if_not_passed(const char *opt, const char *var)
 {
 	if (!var) {
