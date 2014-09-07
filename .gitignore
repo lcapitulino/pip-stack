@@ -4,3 +4,4 @@ tags
 *.swp
 uarp
 gcc.txt
+core.*
