@@ -100,7 +100,8 @@ struct ether_frame *ether_dev_recv(struct ether_device *dev)
 
 void ether_frame_free(struct ether_frame *frame)
 {
-	free(frame);
+	if (frame)
+		free(frame);
 }
 
 const uint8_t *ether_get_dst(const struct ether_frame *frame)
@@ -118,7 +119,7 @@ uint16_t ether_get_type(const struct ether_frame *frame)
 	return ntohs(*frame->type);
 }
 
-const uint8_t *ether_get_data_start(const struct ether_frame *frame)
+const uint8_t *ether_get_data(const struct ether_frame *frame)
 {
 	return frame->data_start;
 }
