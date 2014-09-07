@@ -52,6 +52,17 @@ FILE *xfopen(const char *path, const char *mode)
 	return file;
 }
 
+void xsetunbuf(FILE *stream)
+{
+	int err;
+
+	err = setvbuf(stream, NULL, _IONBF, 0);
+	if (err < 0) {
+		perror("setvbuf()");
+		exit(1);
+	}
+}
+
 int ipv4_addr_to_str(uint32_t addr, char *str, size_t len)
 {
 	struct in_addr in_addr;
