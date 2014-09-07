@@ -235,6 +235,8 @@ int main(int argc, char *argv[])
 	if (config.dump_mode) {
 		uarp_dump_loop(stack.dev, file_dump_eth, file_dump_arp);
 	} else {
+		xsetunbuf(stdout);
+
 		stack.ipv4 = ipv4_object_alloc(config.ipv4_addr_str);
 		if (!stack.ipv4) {
 			perror("ipv4_object_alloc()");
