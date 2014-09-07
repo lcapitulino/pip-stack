@@ -70,10 +70,9 @@ void ether_dev_close(struct ether_device *dev)
 	dev->fd = -1;
 }
 
-struct ether_frame *ether_dev_recv(struct ether_device *dev)
+static struct ether_frame *ether_frame_alloc(void)
 {
 	struct ether_frame *frame;
-	ssize_t ret;
 	uint8_t *p;
 
 	frame = mallocz(sizeof(struct ether_frame));
@@ -81,7 +80,24 @@ struct ether_frame *ether_dev_recv(struct ether_device *dev)
 		return NULL;
 
 	p = frame->buf;
-	ret = read(dev->fd, p, ETHER_FRAME_SIZE);
+	frame->dst =  (uint8_t *)  &p[0];
+	frame->src =  (uint8_t *)  &p[6];
+	frame->type = (uint16_t *) &p[12];
+	frame->data_start = (uint8_t *) &p[ETHER_HEADER_SIZE];
+
+	return frame;
+}
+
+struct ether_frame *ether_dev_recv(struct ether_device *dev)
+{
+	struct ether_frame *frame;
+	ssize_t ret;
+
+	frame = ether_frame_alloc();
+	if (!frame)
+		return NULL;
+
+	ret = read(dev->fd, frame->buf, ETHER_FRAME_SIZE);
 	if (ret < 0) {
 		ret = errno;
 		free(frame);
@@ -89,14 +105,37 @@ struct ether_frame *ether_dev_recv(struct ether_device *dev)
 		return NULL;
 	}
 
-	frame->dst =  (uint8_t *)  &p[0];
-	frame->src =  (uint8_t *)  &p[6];
-	frame->type = (uint16_t *) &p[12];
-	frame->data_start = (uint8_t *) &p[ETHER_HEADER_SIZE];
 	frame->data_size = ret - ETHER_HEADER_SIZE;
 
 	return frame;
 }
+
+#if 0
+int ether_dev_send(struct ether_device *dev, uint8_t dest_hwaddr,
+				   uint16_t type, const uint8_t *data, size_t data_size)
+{
+	struct ether_frame *frame;
+
+	frame = mallocz(sizeof(struct ether_frame));
+	if (!frame)
+		return NULL;
+
+	p = frame->buf;
+	frame->dst =  (uint8_t *)  &p[0];
+	frame->src =  (uint8_t *)  &p[6];
+	frame->type = (uint16_t *) &p[12];
+	frame->data_start = (uint8_t *) &p[ETHER_HEADER_SIZE];
+
+	memcpy(frame->dst, dest_hwaddr, 6);
+	memcpy(frame->src, dev->hwaddr, 6);
+	*frame->type = htons(type);
+	memcpy(frame->data_start, data, data_size);
+	frame->data_size = data_size;
+
+	return frame;
+
+}
+#endif
 
 void ether_frame_free(struct ether_frame *frame)
 {
