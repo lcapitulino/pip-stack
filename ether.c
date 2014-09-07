@@ -110,32 +110,45 @@ struct ether_frame *ether_dev_recv(struct ether_device *dev)
 	return frame;
 }
 
-#if 0
-int ether_dev_send(struct ether_device *dev, uint8_t dest_hwaddr,
+int ether_dev_send(struct ether_device *dev, const uint8_t *dest_hwaddr,
 				   uint16_t type, const uint8_t *data, size_t data_size)
 {
 	struct ether_frame *frame;
+	size_t count;
+	ssize_t ret;
 
-	frame = mallocz(sizeof(struct ether_frame));
+	frame = ether_frame_alloc();
 	if (!frame)
-		return NULL;
-
-	p = frame->buf;
-	frame->dst =  (uint8_t *)  &p[0];
-	frame->src =  (uint8_t *)  &p[6];
-	frame->type = (uint16_t *) &p[12];
-	frame->data_start = (uint8_t *) &p[ETHER_HEADER_SIZE];
+		return -1;
 
 	memcpy(frame->dst, dest_hwaddr, 6);
 	memcpy(frame->src, dev->hwaddr, 6);
 	*frame->type = htons(type);
 	memcpy(frame->data_start, data, data_size);
-	frame->data_size = data_size;
 
-	return frame;
+	count = ETHER_HEADER_SIZE + data_size;
+	ret = write(dev->fd, frame->buf, count);
+	if (ret < 0) {
+		ret = errno;
+		free(frame);
+		errno = ret;
+		return -1;
+	}
 
+	assert(ret == count);
+
+	free(frame);
+	return 0;
 }
-#endif
+
+int ether_dev_send_bcast(struct ether_device *dev, uint16_t type,
+						 const uint8_t *data, size_t data_size)
+{
+	uint8_t addr[6];
+
+	memset(addr, 0xff, sizeof(addr));
+	return ether_dev_send(dev, addr, type, data, data_size);
+}
 
 void ether_frame_free(struct ether_frame *frame)
 {

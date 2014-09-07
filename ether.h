@@ -52,6 +52,10 @@ int ether_dev_open(struct ether_device *dev,
 				   const char *ifname, const char *hwaddr_str);
 void ether_dev_close(struct ether_device *dev);
 struct ether_frame *ether_dev_recv(struct ether_device *dev);
+int ether_dev_send(struct ether_device *dev, const uint8_t *dest_hwaddr,
+				   uint16_t type, const uint8_t *data, size_t data_size);
+int ether_dev_send_bcast(struct ether_device *dev, uint16_t type,
+						 const uint8_t *data, size_t data_size);
 
 void ether_frame_free(struct ether_frame *frame);
 
