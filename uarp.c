@@ -110,7 +110,7 @@ static void uarp_shell_arp_request(struct uarp_protocol_stack *stack,
 		return;
 	}
 
-	arp_dump_packet(stdout, arp);
+	ether_dev_send_bcast(stack->dev, ETHER_TYPE_ARP, arp->buf, ARP_PACKET_SIZE);
 	arp_packet_free(arp);
 }
 
