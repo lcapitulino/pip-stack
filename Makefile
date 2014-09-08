@@ -19,7 +19,7 @@ arp.o: arp.c arp.h common.h misc.h ether.h
 ether.o: ether.c ether.h common.h misc.h
 	$(CC) $(CFLAGS) -c $<
 
-uarp.o: uarp.c common.h ether.h arp.h misc.h
+uarp.o: uarp.c common.h ether.h arp.h misc.h ipv4.h
 	$(CC) $(CFLAGS) -c $<
 
 uarp: uarp.o ether.o misc.o arp.o ipv4.o -lefence -lreadline
