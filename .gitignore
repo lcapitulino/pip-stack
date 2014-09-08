@@ -3,5 +3,6 @@ tags
 *~
 *.swp
 uarp
+dump
 gcc.txt
 core.*

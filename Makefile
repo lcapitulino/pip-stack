@@ -1,5 +1,5 @@
 CC=gcc
-BIN=uarp
+BIN=uarp dump
 CFLAGS=-Wall -g3 -O0
 
 all: $(BIN)
@@ -23,6 +23,12 @@ uarp.o: uarp.c common.h ether.h arp.h misc.h
 	$(CC) $(CFLAGS) -c $<
 
 uarp: uarp.o ether.o misc.o arp.o ipv4.o -lefence -lreadline
+	$(CC) -o $@ $+
+
+dump.o: dump.c common.h ether.h arp.h misc.h
+	$(CC) $(CFLAGS) -c $<
+
+dump: dump.o ether.o misc.o arp.o -lefence
 	$(CC) -o $@ $+
 
 clean:
