@@ -27,10 +27,7 @@
 struct uarp_config {
 	const char *ifname;
 	const char *hwaddr_str;
-	const char *path_dump_eth;
-	const char *path_dump_arp;
 	const char *ipv4_addr_str;
-	bool dump_mode;
 };
 
 struct uarp_protocol_stack {
@@ -43,43 +40,10 @@ struct uarp_shell_cmds {
 	void (*func)(struct uarp_protocol_stack *dev, const char *cmd);
 };
 
-static void uarp_dump_loop(struct ether_device *dev,
-						   FILE *file_dump_eth,
-						   FILE *file_dump_arp)
-{
-	struct ether_frame *frame;
-	struct arp_packet *arp;
-
-	if (!file_dump_eth && !file_dump_arp) {
-		fprintf(stderr, "ERROR: dump mode requires a file to dump to\n");
-		exit(1);
-	}
-
-	while (true) {
-		frame = ether_dev_recv(dev);
-		if (!frame) {
-			perror("ether_dev_recv()");
-			break;
-		}
-
-		if (file_dump_eth)
-			ether_dump_frame(file_dump_eth, frame);
-
-		if (ether_get_type(frame) == ETHER_TYPE_ARP) {
-			arp = arp_from_ether_frame(frame);
-			if (file_dump_arp)
-				arp_dump_packet(file_dump_arp, arp);
-			arp_packet_free(arp);
-		}
-
-		ether_frame_free(frame);
-	}
-}
-
 static void uarp_shell_help(struct uarp_protocol_stack *stack, const char *cmd)
 {
 	printf("\nuarp shell commands:\n\n");
-	printf(" arp-request <ipv4-addr>: send an ARP request to learn ipv4-addr\n");
+	printf(" who-is <ipv4-addr>: send an ARP request\n");
 	printf(" help: this text\n");
 	printf("\n");
 }
@@ -110,18 +74,19 @@ static void uarp_shell_arp_request(struct uarp_protocol_stack *stack,
 		return;
 	}
 
+	fprintf(stdout, "sending packet:\n");
+	arp_dump_packet(stdout, arp);
+
 	ether_dev_send_bcast(stack->dev, ETHER_TYPE_ARP, arp->buf, ARP_PACKET_SIZE);
 	arp_packet_free(arp);
 }
 
-static void uarp_shell(struct uarp_protocol_stack *stack,
-					   FILE *file_dump_eth,
-					   FILE *file_dump_arp)
+static void uarp_shell(struct uarp_protocol_stack *stack)
 {
 	const struct uarp_shell_cmds shell_cmds[] = {
 		{ "help", uarp_shell_help },
 		{ "?", uarp_shell_help },
-		{ "arp-request", uarp_shell_arp_request },
+		{ "who-is", uarp_shell_arp_request },
 		{ .name = NULL }
 	}, *p;
 	char *cmd;
@@ -152,16 +117,12 @@ static void uarp_shell(struct uarp_protocol_stack *stack,
 	}
 }
 
-
 static void usage(void)
 {
-	printf("Usage: uarp -i <interface> -a <hwaddr> -I <ipv4addr>");
-	printf("[-E file] [-R file] [-D]\n\n");
+	printf("uarp: a user-space ARP tool\n");
+	printf("Usage: uarp -i <interface> -a <hwaddr> -I <ipv4addr>\n");
 	printf("   -i <interface>: tap interface to use\n");
 	printf("   -a <hwaddr>   : hardware address\n");
-	printf("   -E <file>     : dump ethernet packates to <file>\n");
-	printf("   -A <file>     : dump ARP packates to <file>\n");
-	printf("   -D            : dump mode (requires -E or -A)\n");
 	printf("   -I            : IPv4 address\n");
 	printf("\n");
 }
@@ -173,25 +134,16 @@ static void uarp_parse_cmdline(int argc, char *argv[],
 
 	memset(config, 0, sizeof(*config));
 
-	while ((opt = getopt(argc, argv, "a:DE:hi:I:R:")) != -1) {
+	while ((opt = getopt(argc, argv, "a:hi:I:")) != -1) {
 		switch (opt) {
 		case 'a':
 			config->hwaddr_str = optarg;
-			break;
-		case 'D':
-			config->dump_mode = true;
-			break;
-		case 'E':
-			config->path_dump_eth = optarg;
 			break;
 		case 'i':
 			config->ifname = optarg;
 			break;
 		case 'I':
 			config->ipv4_addr_str = optarg;
-			break;
-		case 'R':
-			config->path_dump_arp = optarg;
 			break;
 		case 'h':
 		default:
@@ -203,25 +155,15 @@ static void uarp_parse_cmdline(int argc, char *argv[],
 
 int main(int argc, char *argv[])
 {
-	FILE *file_dump_eth, *file_dump_arp;
 	struct uarp_protocol_stack stack;
 	struct uarp_config config;
 	struct ether_device dev;
 	int err;
 
-	file_dump_eth = file_dump_arp = NULL;
-
 	uarp_parse_cmdline(argc, argv, &config);
 	die_if_not_passed("ifname", config.ifname);
 	die_if_not_passed("hwaddr", config.hwaddr_str);
-	if (!config.dump_mode)
-		die_if_not_passed("ipv4addr", config.ipv4_addr_str);
-
-	if (config.path_dump_eth)
-		file_dump_eth = xfopen(config.path_dump_eth, "a");
-
-	if (config.path_dump_arp)
-		file_dump_arp = xfopen(config.path_dump_arp, "a");
+	die_if_not_passed("ipv4addr", config.ipv4_addr_str);
 
 	err = ether_dev_open(&dev, config.ifname, config.hwaddr_str);
 	if (err < 0) {
@@ -229,24 +171,20 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	xsetunbuf(stdout);
+
 	memset(&stack, 0, sizeof(stack));
 	stack.dev = &dev;
 
-	if (config.dump_mode) {
-		uarp_dump_loop(stack.dev, file_dump_eth, file_dump_arp);
-	} else {
-		xsetunbuf(stdout);
-
-		stack.ipv4 = ipv4_object_alloc(config.ipv4_addr_str);
-		if (!stack.ipv4) {
-			perror("ipv4_object_alloc()");
-			exit(1);
-		}
-
-		uarp_shell(&stack, file_dump_eth, file_dump_arp);
-		ipv4_object_free(stack.ipv4);
+	stack.ipv4 = ipv4_object_alloc(config.ipv4_addr_str);
+	if (!stack.ipv4) {
+		perror("ipv4_object_alloc()");
+		exit(1);
 	}
 
-	ether_dev_close(&dev);
+	uarp_shell(&stack);
+
+	ipv4_object_free(stack.ipv4);
+	ether_dev_close(stack.dev);
 	return 0;
 }
