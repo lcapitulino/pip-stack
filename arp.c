@@ -75,6 +75,14 @@ struct arp_packet *arp_build_request(uint8_t *sha, uint32_t spa,
 	return arp;
 }
 
+bool arp_packet_is_good(const struct arp_packet *arp_pkt)
+{
+	return (arp_get_htype(arp_pkt) == 1 &&
+			arp_get_ptype(arp_pkt) == ETHER_TYPE_IPV4 &&
+			arp_get_hlen(arp_pkt)  == 6 &&
+			arp_get_plen(arp_pkt)  == 4);
+}
+
 void arp_packet_free(struct arp_packet *arp)
 {
 	free(arp);
