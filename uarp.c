@@ -15,6 +15,7 @@
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include <stdio.h>
+#include <signal.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 
@@ -39,6 +40,14 @@ struct uarp_shell_cmds {
 	const char *name;
 	void (*func)(struct uarp_protocol_stack *dev, const char *cmd);
 };
+
+static int uarp_interrupted;
+
+static void uarp_signal_handler(int signum)
+{
+	if (signum == SIGINT)
+		uarp_interrupted = 1;
+}
 
 static void uarp_shell_help(struct uarp_protocol_stack *stack, const char *cmd)
 {
@@ -90,10 +99,16 @@ static void uarp_shell_arp_request(struct uarp_protocol_stack *stack,
 		return;
 	}
 
-	while (true) {
+	while (!uarp_interrupted) {
 		arp_packet_free(arp_pkt);
 
 		frame = ether_dev_recv(stack->dev);
+		if (uarp_interrupted) {
+			ether_frame_free(frame);
+			putchar('\n');
+			break;
+		}
+
 		if (!frame) {
 			uarp_print_errno("can't receive frame");
 			return;
@@ -128,6 +143,8 @@ static void uarp_shell_arp_request(struct uarp_protocol_stack *stack,
 		arp_packet_free(arp_pkt);
 		break;
 	}
+
+	uarp_interrupted = 0;
 }
 
 static void uarp_shell(struct uarp_protocol_stack *stack)
@@ -207,6 +224,7 @@ int main(int argc, char *argv[])
 	struct uarp_protocol_stack stack;
 	struct uarp_config config;
 	struct ether_device *dev;
+	struct sigaction act;
 	uint8_t hwaddr[6];
 	int err;
 
@@ -237,6 +255,14 @@ int main(int argc, char *argv[])
 	stack.ipv4 = ipv4_object_alloc(config.ipv4_addr_str);
 	if (!stack.ipv4) {
 		perror("ipv4_object_alloc()");
+		exit(1);
+	}
+
+	memset(&act, 0, sizeof(act));
+	act.sa_handler = uarp_signal_handler;
+	err = sigaction(SIGINT, &act, NULL);
+	if (err < 0) {
+		perror("sigaction()");
 		exit(1);
 	}
 
