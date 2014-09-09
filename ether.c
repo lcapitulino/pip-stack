@@ -140,9 +140,9 @@ int ether_dev_send(struct ether_device *dev, const uint8_t *dest_hwaddr,
 	if (!frame)
 		return -1;
 
-	memcpy(frame->dst, dest_hwaddr, 6);
-	memcpy(frame->src, dev->hwaddr, 6);
 	*frame->type = htons(type);
+	hwaddr_copy(frame->dst, dest_hwaddr);
+	hwaddr_copy(frame->src, dev->hwaddr);
 	memcpy(frame->data_start, data, data_size);
 
 	count = ETHER_HEADER_SIZE + data_size;
