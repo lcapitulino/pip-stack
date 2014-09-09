@@ -14,8 +14,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#ifndef MISC_H
-#define MISC_H
+#ifndef ETHER_H
+#define ETHER_H
 
 #include <string.h>
 #include <stdint.h>
@@ -78,4 +78,4 @@ static inline void hwaddr_copy(uint8_t *dest, const uint8_t *src)
 	memcpy(dest, src, 6);
 }
 
-#endif /* MISC_H */
+#endif /* ETHER_H */
