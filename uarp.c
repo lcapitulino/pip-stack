@@ -48,37 +48,86 @@ static void uarp_shell_help(struct uarp_protocol_stack *stack, const char *cmd)
 	printf("\n");
 }
 
+static void uarp_print_errno(const char *msg)
+{
+	printf("ERROR: %s: %s\n", msg, strerror(errno));
+}
+
 static void uarp_shell_arp_request(struct uarp_protocol_stack *stack,
 								   const char *cmd)
 {
-	struct arp_packet *arp;
+	struct arp_packet *arp_pkt;
+	struct ether_frame *frame;
+	const char *ipv4_addr_str;
+	char hwaddr_str[24];
 	in_addr_t addr;
-	const char *p;
+	int err;
 
-	p = strchr(cmd, ' ');
-	if (!p) {
+	ipv4_addr_str = strchr(cmd, ' ');
+	if (!ipv4_addr_str) {
 		printf("ERROR: bad arp request command: %s\n", cmd);
 		return;
 	}
 
-	addr = inet_network(++p);
+	addr = inet_network(++ipv4_addr_str);
 	if (addr == -1) {
-		printf("ERROR: bad IPv4 address: %s\n", p);
+		printf("ERROR: bad IPv4 address: %s\n", ipv4_addr_str);
 		return;
 	}
 
-	arp = arp_build_request(stack->dev->hwaddr, stack->ipv4->ipv4_addr,
-							ETHER_TYPE_IPV4, addr);
-	if (!arp) {
-		printf("ERROR: failed to build ARP request: %s\n", strerror(errno));
+	arp_pkt = arp_build_request(stack->dev->hwaddr, stack->ipv4->ipv4_addr,
+								ETHER_TYPE_IPV4, addr);
+	if (!arp_pkt) {
+		uarp_print_errno("failed to build ARP request");
 		return;
 	}
 
-	fprintf(stdout, "sending packet:\n");
-	arp_dump_packet(stdout, arp);
+	err = ether_dev_send_bcast(stack->dev, ETHER_TYPE_ARP,
+							   arp_pkt->buf, ARP_PACKET_SIZE);
+	if (err < 0) {
+		uarp_print_errno("failed to send ARP request");
+		arp_packet_free(arp_pkt);
+		return;
+	}
 
-	ether_dev_send_bcast(stack->dev, ETHER_TYPE_ARP, arp->buf, ARP_PACKET_SIZE);
-	arp_packet_free(arp);
+	while (true) {
+		arp_packet_free(arp_pkt);
+
+		frame = ether_dev_recv(stack->dev);
+		if (!frame) {
+			uarp_print_errno("can't receive frame");
+			return;
+		}
+
+		if (ether_get_type(frame) != ETHER_TYPE_ARP) {
+			ether_frame_free(frame);
+			arp_pkt = NULL;
+			continue;
+		}
+
+		arp_pkt = arp_from_ether_frame(frame);
+		if (!arp_pkt) {
+			uarp_print_errno("failed to get ARP packet");
+			ether_frame_free(frame);
+			return;
+		}
+
+		ether_frame_free(frame);
+
+		if (!arp_packet_is_good(arp_pkt))
+			continue;
+
+		if (arp_get_oper(arp_pkt) != ARP_OP_REP)
+			continue;
+
+		if (arp_get_spa(arp_pkt) != addr)
+			continue;
+
+		ether_addr_to_str(arp_get_sha(arp_pkt), hwaddr_str, sizeof(hwaddr_str));
+		printf("%s is %s\n", ipv4_addr_str, hwaddr_str);
+		arp_packet_free(arp_pkt);
+		break;
+	}
 }
 
 static void uarp_shell(struct uarp_protocol_stack *stack)
