@@ -18,7 +18,9 @@
 #define XMISC_H
 
 #include <stdio.h>
+#include <string.h>
 #include <stddef.h>
+#include <stdint.h>
 
 void *mallocz(size_t size);
 void die_if_not_passed(const char *opt, const char *var);
@@ -26,5 +28,10 @@ FILE *xfopen(const char *path, const char *mode);
 void xsetunbuf(FILE *stream);
 int ipv4_addr_to_str(uint32_t addr, char *str, size_t len);
 void dump_data(FILE *stream, const uint8_t *data, size_t len);
+
+static inline void copy_hwaddr(uint8_t *dest, const uint8_t *src)
+{
+	memcpy(dest, src, 6);
+}
 
 #endif /* XMISC_H */
