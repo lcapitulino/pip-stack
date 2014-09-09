@@ -62,8 +62,8 @@ static void uarp_print_errno(const char *msg)
 	printf("ERROR: %s: %s\n", msg, strerror(errno));
 }
 
-static void uarp_shell_arp_request(struct uarp_protocol_stack *stack,
-								   const char *cmd)
+static void uarp_shell_whois(struct uarp_protocol_stack *stack,
+                             const char *cmd)
 {
 	struct arp_packet *arp_pkt;
 	struct ether_frame *frame;
@@ -152,7 +152,7 @@ static void uarp_shell(struct uarp_protocol_stack *stack)
 	const struct uarp_shell_cmds shell_cmds[] = {
 		{ "help", uarp_shell_help },
 		{ "?", uarp_shell_help },
-		{ "who-is", uarp_shell_arp_request },
+		{ "whois", uarp_shell_whois },
 		{ .name = NULL }
 	}, *p;
 	char *cmd;
