@@ -27,13 +27,41 @@
 #include "common.h"
 #include "misc.h"
 
-int ether_dev_open(struct ether_device *dev,
-				   const char *ifname, const char *hwaddr_str)
+struct ether_device *ether_dev_alloc(uint8_t *hwaddr)
+{
+	struct ether_device *dev;
+
+	dev = mallocz(sizeof(*dev));
+	if (!dev)
+		return NULL;
+
+	dev->fd = -1;
+	dev->cnt = 1;
+	if (hwaddr)
+		copy_hwaddr(dev->hwaddr, hwaddr);
+
+	return dev;
+}
+
+void ether_dev_put(struct ether_device *dev)
+{
+	if (dev) {
+		close(dev->fd);
+		free(dev);
+	}
+}
+
+void ether_dev_get(struct ether_device *dev)
+{
+	dev->cnt++;
+}
+
+int ether_dev_open(struct ether_device *dev, const char *ifname)
 {
 	struct ifreq ifr;
 	int err;
 
-	if (!dev || !hwaddr_str) {
+	if (!dev) {
 		errno = EINVAL;
 		dev->fd = -1;
 		return -1;
@@ -51,9 +79,6 @@ int ether_dev_open(struct ether_device *dev,
 	if (err < 0)
 		goto out_err;
 
-	memset(dev->hwaddr, 0, sizeof(dev->hwaddr));
-	ether_str_to_addr(hwaddr_str, dev->hwaddr);
-
 	return 0;
 
 out_err:
@@ -62,12 +87,6 @@ out_err:
 	errno = err;
 	dev->fd = -1;
 	return -1;
-}
-
-void ether_dev_close(struct ether_device *dev)
-{
-	close(dev->fd);
-	dev->fd = -1;
 }
 
 static struct ether_frame *ether_frame_alloc(void)

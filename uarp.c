@@ -157,7 +157,8 @@ int main(int argc, char *argv[])
 {
 	struct uarp_protocol_stack stack;
 	struct uarp_config config;
-	struct ether_device dev;
+	struct ether_device *dev;
+	uint8_t hwaddr[6];
 	int err;
 
 	uarp_parse_cmdline(argc, argv, &config);
@@ -165,7 +166,15 @@ int main(int argc, char *argv[])
 	die_if_not_passed("hwaddr", config.hwaddr_str);
 	die_if_not_passed("ipv4addr", config.ipv4_addr_str);
 
-	err = ether_dev_open(&dev, config.ifname, config.hwaddr_str);
+	ether_str_to_addr(config.hwaddr_str, hwaddr);
+
+	dev = ether_dev_alloc(hwaddr);
+	if (!dev) {
+		perror("ether_dev_alloc()");
+		exit(1);
+	}
+
+	err = ether_dev_open(dev, config.ifname);
 	if (err < 0) {
 		perror("ether_dev_open()");
 		exit(1);
@@ -174,7 +183,7 @@ int main(int argc, char *argv[])
 	xsetunbuf(stdout);
 
 	memset(&stack, 0, sizeof(stack));
-	stack.dev = &dev;
+	stack.dev = dev;
 
 	stack.ipv4 = ipv4_object_alloc(config.ipv4_addr_str);
 	if (!stack.ipv4) {
@@ -185,6 +194,6 @@ int main(int argc, char *argv[])
 	uarp_shell(&stack);
 
 	ipv4_object_free(stack.ipv4);
-	ether_dev_close(stack.dev);
+	ether_dev_put(stack.dev);
 	return 0;
 }

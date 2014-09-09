@@ -37,6 +37,7 @@
 struct ether_device {
 	int fd;
 	uint8_t hwaddr[6];
+	int cnt;
 };
 
 struct ether_frame {
@@ -48,9 +49,10 @@ struct ether_frame {
 	uint8_t buf[ETHER_FRAME_SIZE];
 };
 
-int ether_dev_open(struct ether_device *dev,
-				   const char *ifname, const char *hwaddr_str);
-void ether_dev_close(struct ether_device *dev);
+struct ether_device *ether_dev_alloc(uint8_t *hwaddr);
+void ether_dev_put(struct ether_device *dev);
+void ether_dev_get(struct ether_device *dev);
+int ether_dev_open(struct ether_device *dev, const char *ifname);
 struct ether_frame *ether_dev_recv(struct ether_device *dev);
 int ether_dev_send(struct ether_device *dev, const uint8_t *dest_hwaddr,
 				   uint16_t type, const uint8_t *data, size_t data_size);

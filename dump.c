@@ -65,21 +65,23 @@ int main(int argc, char *argv[])
 {
 	struct dump_config config;
 	struct ether_frame *frame;
-	struct ether_device dev;
+	struct ether_device *dev;
 	struct arp_packet *arp;
 	int err;
 
 	dump_parse_cmdline(argc, argv, &config);
 	die_if_not_passed("ifname", config.ifname);
 
-	err = ether_dev_open(&dev, config.ifname, "00:00:00:00:00:00");
+	dev = ether_dev_alloc(NULL);
+
+	err = ether_dev_open(dev, config.ifname);
 	if (err < 0) {
 		perror("ether_dev_open()");
 		exit(1);
 	}
 
 	while (true) {
-		frame = ether_dev_recv(&dev);
+		frame = ether_dev_recv(dev);
 		if (!frame) {
 			perror("ether_dev_recv()");
 			break;
@@ -96,6 +98,6 @@ int main(int argc, char *argv[])
 		ether_frame_free(frame);
 	}
 
-	ether_dev_close(&dev);
+	ether_dev_put(dev);
 	return 0;
 }
