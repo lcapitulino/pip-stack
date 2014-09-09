@@ -67,8 +67,8 @@ static void uarp_shell_arp_request(struct uarp_protocol_stack *stack,
 		return;
 	}
 
-	arp = arp_build_request(ETHER_TYPE_IPV4, stack->dev->hwaddr,
-							stack->ipv4->ipv4_addr, addr);
+	arp = arp_build_request(stack->dev->hwaddr, stack->ipv4->ipv4_addr,
+							ETHER_TYPE_IPV4, addr);
 	if (!arp) {
 		printf("ERROR: failed to build ARP request: %s\n", strerror(errno));
 		return;
