@@ -1,4 +1,0 @@
-uarp
-====
-
-- add support for setting the hardware address (in ether_tun_open())
