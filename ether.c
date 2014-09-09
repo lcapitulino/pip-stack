@@ -38,7 +38,7 @@ struct ether_device *ether_dev_alloc(uint8_t *hwaddr)
 	dev->fd = -1;
 	dev->cnt = 1;
 	if (hwaddr)
-		copy_hwaddr(dev->hwaddr, hwaddr);
+		hwaddr_copy(dev->hwaddr, hwaddr);
 
 	return dev;
 }
