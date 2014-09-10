@@ -75,6 +75,34 @@ struct arp_packet *arp_build_request(uint8_t *sha, uint32_t spa,
 	return arp;
 }
 
+struct arp_packet *arp_build_reply(const struct arp_packet *arp_req,
+                                   const uint8_t *host_hwaddr)
+{
+	struct arp_packet *arp_rep;
+	uint8_t hwaddr[6];
+	uint32_t ip_addr;
+
+	arp_rep = arp_packet_alloc();
+	if (!arp_rep)
+		return NULL;
+
+	memcpy(arp_rep->buf, arp_req->buf, ARP_PACKET_SIZE);
+	*arp_rep->oper = htons(ARP_OP_REP);
+	hwaddr_copy(arp_rep->tha, host_hwaddr);
+
+	/* swap protocol address */
+	ip_addr = *arp_rep->tpa;
+	*arp_rep->tpa = *arp_rep->spa;
+	*arp_rep->spa = ip_addr;
+
+	/* swap hardware address */
+	hwaddr_copy(hwaddr, arp_rep->tha);
+	hwaddr_copy(arp_rep->tha, arp_rep->sha);
+	hwaddr_copy(arp_rep->sha, hwaddr);
+
+	return arp_rep;
+}
+
 bool arp_packet_is_good(const struct arp_packet *arp_pkt)
 {
 	return (arp_get_htype(arp_pkt) == 1 &&
