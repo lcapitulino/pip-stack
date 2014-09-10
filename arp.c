@@ -142,7 +142,7 @@ const uint8_t *arp_get_tha(const struct arp_packet *arp)
 
 uint32_t arp_get_tpa(const struct arp_packet *arp)
 {
-	return ntohl(*arp->spa);
+	return ntohl(*arp->tpa);
 }
 
 void arp_dump_packet(FILE *stream, const struct arp_packet *arp)
