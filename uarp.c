@@ -52,7 +52,8 @@ static void uarp_signal_handler(int signum)
 static void uarp_shell_help(struct uarp_protocol_stack *stack, const char *cmd)
 {
 	printf("\nuarp shell commands:\n\n");
-	printf(" who-is <ipv4-addr>: send an ARP request\n");
+	printf(" whois <ipv4-addr>: send an ARP request\n");
+	printf(" reply: waits for ARP requests and reply to them\n");
 	printf(" help: this text\n");
 	printf("\n");
 }
