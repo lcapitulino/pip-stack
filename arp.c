@@ -162,7 +162,7 @@ void arp_dump_packet(FILE *stream, const struct arp_packet *arp)
 	fprintf(stream, "   sha:   %s\n", hwaddr_str);
 
 	memset(ipv4_addr_str, 0, sizeof(ipv4_addr_str));
-	ipv4_addr_to_str(*arp->spa, ipv4_addr_str, sizeof(ipv4_addr_str));
+	ipv4_addr_to_str(arp_get_spa(arp), ipv4_addr_str, sizeof(ipv4_addr_str));
 	fprintf(stream, "   spa:   %s\n", ipv4_addr_str);
 
 	memset(hwaddr_str, 0, sizeof(hwaddr_str));
@@ -170,7 +170,7 @@ void arp_dump_packet(FILE *stream, const struct arp_packet *arp)
 	fprintf(stream, "   tha:   %s\n", hwaddr_str);
 
 	memset(ipv4_addr_str, 0, sizeof(ipv4_addr_str));
-	ipv4_addr_to_str(*arp->tpa, ipv4_addr_str, sizeof(ipv4_addr_str));
+	ipv4_addr_to_str(arp_get_tpa(arp), ipv4_addr_str, sizeof(ipv4_addr_str));
 	fprintf(stream, "   tpa:   %s\n", ipv4_addr_str);
 
 	fprintf(stream, "\n");

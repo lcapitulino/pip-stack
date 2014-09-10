@@ -63,13 +63,14 @@ void xsetunbuf(FILE *stream)
 	}
 }
 
+/* addr is host byte order */
 int ipv4_addr_to_str(uint32_t addr, char *str, size_t len)
 {
 	struct in_addr in_addr;
 	const char *p;
 
 	memset(&in_addr, 0, sizeof(in_addr)); /* just in case */
-	in_addr.s_addr = addr;
+	in_addr.s_addr = htonl(addr);
 	p = inet_ntoa(in_addr);
 	if (!p)
 		return -1;
