@@ -147,12 +147,87 @@ static void uarp_shell_whois(struct uarp_protocol_stack *stack,
 	uarp_interrupted = 0;
 }
 
+static void uarp_shell_reply(struct uarp_protocol_stack *stack,
+                             const char *cmd)
+{
+	struct arp_packet *arp_pkt = NULL;
+	struct arp_packet *arp_rep;
+	struct ether_frame *frame;
+	char ipv4_addr[16];
+	int err;
+
+	printf("Entering reply loop, press ^C to exit\n");
+
+	while (!uarp_interrupted) {
+		arp_packet_free(arp_pkt);
+		arp_pkt = NULL;
+
+		frame = ether_dev_recv(stack->dev);
+		if (uarp_interrupted) {
+			ether_frame_free(frame);
+			putchar('\n');
+			break;
+		}
+
+		if (!frame) {
+			uarp_print_errno("can't receive frame");
+			break;
+		}
+
+		if (ether_get_type(frame) != ETHER_TYPE_ARP) {
+			ether_frame_free(frame);
+			continue;
+		}
+
+		arp_pkt = arp_from_ether_frame(frame);
+		if (!arp_pkt) {
+			uarp_print_errno("failed to get ARP packet");
+			ether_frame_free(frame);
+			continue;
+		}
+
+		ether_frame_free(frame);
+
+		if (!arp_packet_is_good(arp_pkt))
+			continue;
+
+		if (arp_get_oper(arp_pkt) != ARP_OP_REQ)
+			continue;
+
+		if (arp_get_tpa(arp_pkt) != stack->ipv4->ipv4_addr)
+			continue;
+
+		/* ARP request for us */
+		memset(ipv4_addr, 0, sizeof(ipv4_addr));
+		ipv4_addr_to_str(arp_get_spa(arp_pkt), ipv4_addr, sizeof(ipv4_addr));
+		printf("%s wants to know about us, sending reply... ", ipv4_addr);
+
+		arp_rep = arp_build_reply(arp_pkt, stack->dev->hwaddr);
+		if (!arp_rep) {
+			uarp_print_errno("failed to build ARP reply");
+			continue;
+		}
+
+		err = ether_dev_send(stack->dev, arp_get_tha(arp_rep), ETHER_TYPE_ARP,
+                             arp_rep->buf, ARP_PACKET_SIZE);
+		if (err < 0)
+			uarp_print_errno("failed to send ethernet frame");
+		else
+			printf("done!\n");
+
+		arp_packet_free(arp_rep);
+	}
+
+	uarp_interrupted = 0;
+}
+
 static void uarp_shell(struct uarp_protocol_stack *stack)
 {
 	const struct uarp_shell_cmds shell_cmds[] = {
 		{ "help", uarp_shell_help },
 		{ "?", uarp_shell_help },
 		{ "whois", uarp_shell_whois },
+		{ "reply", uarp_shell_reply },
 		{ .name = NULL }
 	}, *p;
 	char *cmd;
