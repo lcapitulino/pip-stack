@@ -37,8 +37,8 @@
 
 struct ether_device {
 	int fd;
-	uint8_t hwaddr[6];
 	int cnt;
+	uint8_t hwaddr[6];
 };
 
 struct ether_frame {
