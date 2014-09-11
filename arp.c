@@ -113,7 +113,8 @@ bool arp_packet_is_good(const struct arp_packet *arp_pkt)
 
 void arp_packet_free(struct arp_packet *arp)
 {
-	free(arp);
+	if (arp)
+		free(arp);
 }
 
 uint16_t arp_get_htype(const struct arp_packet *arp)
