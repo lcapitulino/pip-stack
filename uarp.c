@@ -270,7 +270,7 @@ static void usage(void)
 }
 
 static void uarp_parse_cmdline(int argc, char *argv[],
-							   struct uarp_config *config)
+                               struct uarp_config *config)
 {
 	int opt;
 
