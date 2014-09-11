@@ -55,7 +55,7 @@ struct arp_packet *arp_from_ether_frame(const struct ether_frame *frame)
 }
 
 struct arp_packet *arp_build_request(uint8_t *sha, uint32_t spa,
-									 uint16_t ptype, uint32_t tpa)
+                                     uint16_t ptype, uint32_t tpa)
 {
 	struct arp_packet *arp;
 
