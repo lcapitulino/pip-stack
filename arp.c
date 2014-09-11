@@ -67,7 +67,7 @@ struct arp_packet *arp_build_request(uint8_t *sha, uint32_t spa,
 	*arp_req->ptype = htons(ptype);
 	*arp_req->hlen =  6;
 	*arp_req->plen =  4;
-	*arp_req->oper =  htons(1);
+	*arp_req->oper =  htons(ARP_OP_REQ);
 	memcpy(arp_req->sha, sha, 6);
 	*arp_req->spa = htonl(spa);
 	*arp_req->tpa = htonl(tpa);
