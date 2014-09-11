@@ -36,7 +36,7 @@ static void usage(void)
 }
 
 static void dump_parse_cmdline(int argc, char *argv[],
-							   struct dump_config *config)
+                               struct dump_config *config)
 {
 	int opt;
 
