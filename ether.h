@@ -79,7 +79,7 @@ static inline void hwaddr_copy(uint8_t *dest, const uint8_t *src)
 	memcpy(dest, src, 6);
 }
 
-static inline bool hwaddr_eq(uint8_t *dest, const uint8_t *src)
+static inline bool hwaddr_eq(const uint8_t *dest, const uint8_t *src)
 {
 	return memcmp(dest, src, 6) == 0;
 }
