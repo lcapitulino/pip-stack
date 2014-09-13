@@ -7,3 +7,4 @@ dump
 gcc.txt
 core.*
 check-*
+!check-*.c
