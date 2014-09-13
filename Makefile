@@ -8,6 +8,7 @@ endif
 CC := gcc
 CFLAGS := -Wall -ggdb -O0
 BIN := uarp dump
+TESTS := check-ether
 
 all: $(BIN)
 
@@ -38,5 +39,18 @@ dump.o: dump.c common.h ether.h arp.h misc.h
 dump: dump.o ether.o misc.o arp.o -lefence
 	$(QUIET_LK)$(CC) -o $@ $+
 
+###
+### Tests
+###
+
+check-ether.o: check-ether.c ether.h common.h
+	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
+
+check-ether: check-ether.o ether.o misc.o -lcheck -lefence
+	$(QUIET_LK)$(CC) -o $@ $+
+
+check: $(TESTS)
+	@for t in $+; do ./$$t; done
+
 clean:
-	@rm -f $(BIN) *.o core.* tags
+	@rm -f $(BIN) $(TESTS) *.o core.* tags
