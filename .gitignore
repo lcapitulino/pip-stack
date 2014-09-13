@@ -6,3 +6,4 @@ uarp
 dump
 gcc.txt
 core.*
+check-*
