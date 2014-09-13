@@ -89,7 +89,7 @@ out_err:
 	return -1;
 }
 
-static struct ether_frame *ether_frame_alloc(void)
+struct ether_frame *ether_frame_alloc(void)
 {
 	struct ether_frame *frame;
 	uint8_t *p;
