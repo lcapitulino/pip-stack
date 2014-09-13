@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 /*
  * This is the maxium size for what the 802.3 standard calls
@@ -76,6 +77,11 @@ void ether_dump_frame(FILE *stream, const struct ether_frame *frame);
 static inline void hwaddr_copy(uint8_t *dest, const uint8_t *src)
 {
 	memcpy(dest, src, 6);
+}
+
+static inline bool hwaddr_eq(uint8_t *dest, const uint8_t *src)
+{
+	return memcmp(dest, src, 6) == 0;
 }
 
 #endif /* ETHER_H */
