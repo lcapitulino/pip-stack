@@ -88,7 +88,7 @@ struct arp_packet *arp_build_reply(const struct arp_packet *arp_req,
 
 	memcpy(arp_rep->buf, arp_req->buf, ARP_PACKET_SIZE);
 	*arp_rep->oper = htons(ARP_OP_REP);
-	hwaddr_copy(arp_rep->tha, host_hwaddr);
+	hwaddr_cp(arp_rep->tha, host_hwaddr);
 
 	/* swap protocol address */
 	ip_addr = *arp_rep->tpa;
@@ -96,9 +96,9 @@ struct arp_packet *arp_build_reply(const struct arp_packet *arp_req,
 	*arp_rep->spa = ip_addr;
 
 	/* swap hardware address */
-	hwaddr_copy(hwaddr, arp_rep->tha);
-	hwaddr_copy(arp_rep->tha, arp_rep->sha);
-	hwaddr_copy(arp_rep->sha, hwaddr);
+	hwaddr_cp(hwaddr, arp_rep->tha);
+	hwaddr_cp(arp_rep->tha, arp_rep->sha);
+	hwaddr_cp(arp_rep->sha, hwaddr);
 
 	return arp_rep;
 }

@@ -47,7 +47,7 @@ START_TEST(test_hwaddr_cp)
 	int i;
 
 	hwaddr_init(hwaddr, 0);
-	hwaddr_copy(hwaddr, hwaddr_gbl);
+	hwaddr_cp(hwaddr, hwaddr_gbl);
 
 	for (i = 0; i < 6; i++)
 		ck_assert_int_eq(hwaddr_gbl[i], hwaddr[i]);

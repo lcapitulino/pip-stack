@@ -80,7 +80,7 @@ static inline void hwaddr_init(uint8_t *hwaddr, int c)
 	memset(hwaddr, c, 6);
 }
 
-static inline void hwaddr_copy(uint8_t *dest, const uint8_t *src)
+static inline void hwaddr_cp(uint8_t *dest, const uint8_t *src)
 {
 	memcpy(dest, src, 6);
 }

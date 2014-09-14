@@ -38,7 +38,7 @@ struct ether_device *ether_dev_alloc(const uint8_t *hwaddr)
 	dev->fd = -1;
 	dev->cnt = 1;
 	if (hwaddr)
-		hwaddr_copy(dev->hwaddr, hwaddr);
+		hwaddr_cp(dev->hwaddr, hwaddr);
 
 	return dev;
 }
@@ -141,8 +141,8 @@ int ether_dev_send(struct ether_device *dev, const uint8_t *dest_hwaddr,
 		return -1;
 
 	*frame->type = htons(type);
-	hwaddr_copy(frame->dst, dest_hwaddr);
-	hwaddr_copy(frame->src, dev->hwaddr);
+	hwaddr_cp(frame->dst, dest_hwaddr);
+	hwaddr_cp(frame->src, dev->hwaddr);
 	memcpy(frame->data_start, data, data_size);
 
 	count = ETHER_HEADER_SIZE + data_size;
