@@ -225,15 +225,30 @@ void ether_addr_to_str(const uint8_t *hwaddr, char *str, size_t len)
 									(unsigned int) hwaddr[5]);
 }
 
-void ether_str_to_addr(const char *hwaddr_str, uint8_t *hwaddr)
+int ether_str_to_addr(const char *hwaddr_str, uint8_t *hwaddr)
 {
-	sscanf(hwaddr_str, "%x:%x:%x:%x:%x:%x",
+	int ret;
+
+	ret = sscanf(hwaddr_str, "%x:%x:%x:%x:%x:%x",
 									(unsigned int *) &hwaddr[0],
 									(unsigned int *) &hwaddr[1],
 									(unsigned int *) &hwaddr[2],
 									(unsigned int *) &hwaddr[3],
 									(unsigned int *) &hwaddr[4],
 									(unsigned int *) &hwaddr[5]);
+	if (ret == EOF)
+		goto out_err;
+
+	if (ret != 6) {
+		errno = EINVAL;
+		goto out_err;
+	}
+
+	return 0;
+
+out_err:
+	memset(hwaddr, 0, 6);
+	return -1;
 }
 
 void ether_dump_frame(FILE *stream, const struct ether_frame *frame)
