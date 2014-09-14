@@ -75,6 +75,11 @@ void ether_addr_to_str(const uint8_t *hwaddr, char *str, size_t len);
 int ether_str_to_addr(const char *hwaddr_str, uint8_t *hwaddr);
 void ether_dump_frame(FILE *stream, const struct ether_frame *frame);
 
+static inline void hwaddr_init(uint8_t *hwaddr, int c)
+{
+	memset(hwaddr, c, 6);
+}
+
 static inline void hwaddr_copy(uint8_t *dest, const uint8_t *src)
 {
 	memcpy(dest, src, 6);
