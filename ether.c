@@ -248,7 +248,7 @@ int ether_str_to_addr(const char *hwaddr_str, uint8_t *hwaddr)
 	return 0;
 
 out_err:
-	memset(hwaddr, 0, 6);
+	hwaddr_init(hwaddr, 0);
 	return -1;
 }
 
