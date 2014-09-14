@@ -43,7 +43,7 @@ struct arp_packet {
 	uint8_t buf[ARP_PACKET_SIZE];
 };
 
-struct arp_packet *arp_from_ether_frame(const struct ether_frame *frame);
+struct arp_packet *arp_packet_from_data(const uint8_t *data, size_t size);
 void arp_packet_free(struct arp_packet *arp_pkt);
 
 struct arp_packet *arp_build_request(uint8_t *sha, uint32_t spa,

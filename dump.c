@@ -90,7 +90,8 @@ int main(int argc, char *argv[])
 		ether_dump_frame(config.file_eth, frame);
 
 		if (ether_get_type(frame) == ETHER_TYPE_ARP) {
-			arp = arp_from_ether_frame(frame);
+			arp = arp_packet_from_data(ether_get_data(frame),
+                                       ether_get_data_size(frame));
 			arp_dump_packet(config.file_arp, arp);
 			arp_packet_free(arp);
 		}

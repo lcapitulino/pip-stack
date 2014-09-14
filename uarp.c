@@ -121,7 +121,8 @@ static void uarp_shell_whois(struct uarp_protocol_stack *stack,
 			continue;
 		}
 
-		arp_pkt = arp_from_ether_frame(frame);
+		arp_pkt = arp_packet_from_data(ether_get_data(frame),
+                                       ether_get_data_size(frame));
 		if (!arp_pkt) {
 			uarp_print_errno("failed to get ARP packet");
 			ether_frame_free(frame);
@@ -180,7 +181,8 @@ static void uarp_shell_reply(struct uarp_protocol_stack *stack,
 			continue;
 		}
 
-		arp_pkt = arp_from_ether_frame(frame);
+		arp_pkt = arp_packet_from_data(ether_get_data(frame),
+                                       ether_get_data_size(frame));
 		if (!arp_pkt) {
 			uarp_print_errno("failed to get ARP packet");
 			ether_frame_free(frame);
