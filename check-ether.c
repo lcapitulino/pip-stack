@@ -144,15 +144,55 @@ START_TEST(test_frame_free_null)
 }
 END_TEST
 
+START_TEST(test_addr_to_str)
+{
+	const uint8_t hwaddr[6] = { 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6 };
+	char str[18];
+
+	memset(str, 0, sizeof(str));
+	ether_addr_to_str(hwaddr, str, sizeof(str));
+	ck_assert_str_eq(str, "f1:f2:f3:f4:f5:f6");
+}
+END_TEST
+
+START_TEST(test_str_to_addr)
+{
+	const uint8_t hwaddr[6] = { 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6 };
+	const char str_ok[] = "f1:f2:f3:f4:f5:f6";
+	const char str_err1[] = "kjnfksnfskdds";
+	const char str_err2[] = "f1:f2";
+	const char str_err3[] = "f1:::::f2";
+	uint8_t hwaddr_tmp[6];
+	int ret;
+
+	memset(hwaddr_tmp, 0, sizeof(hwaddr_tmp));
+
+	ret = ether_str_to_addr(str_ok, hwaddr_tmp);
+	ck_assert_int_eq(ret, 0);
+	ck_assert_int_eq(hwaddr_eq(hwaddr_tmp, hwaddr), true);
+
+	/*
+	 * Test some errors
+	 */
+	ret = ether_str_to_addr(str_err1, hwaddr_tmp);
+	ck_assert_int_eq(ret, -1);
+
+	ret = ether_str_to_addr(str_err2, hwaddr_tmp);
+	ck_assert_int_eq(ret, -1);
+
+	ret = ether_str_to_addr(str_err3, hwaddr_tmp);
+	ck_assert_int_eq(ret, -1);
+}
+END_TEST
+
 Suite *ether_suite(void)
 {
 	Suite *s;
-	TCase *tc_frame;
+	TCase *tc_frame, *tc_misc;
 
 	s = suite_create("Ethernet");
 
 	tc_frame = tcase_create("Frame");
-
 	tcase_add_test(tc_frame, test_dev_alloc_no_hwaddr);
 	tcase_add_test(tc_frame, test_dev_alloc_hwaddr);
 	tcase_add_test(tc_frame, test_dev_ref_cnt);
@@ -160,6 +200,11 @@ Suite *ether_suite(void)
 	tcase_add_test(tc_frame, test_header_parsing_and_api);
 	tcase_add_test(tc_frame, test_frame_free_null);
 	suite_add_tcase(s, tc_frame);
+
+	tc_misc = tcase_create("Misc");
+	tcase_add_test(tc_misc, test_addr_to_str);
+	tcase_add_test(tc_misc, test_str_to_addr);
+	suite_add_tcase(s, tc_misc);
 
 	return s;
 }
