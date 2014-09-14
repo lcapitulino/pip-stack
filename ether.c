@@ -27,7 +27,7 @@
 #include "common.h"
 #include "misc.h"
 
-struct ether_device *ether_dev_alloc(uint8_t *hwaddr)
+struct ether_device *ether_dev_alloc(const uint8_t *hwaddr)
 {
 	struct ether_device *dev;
 
