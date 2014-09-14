@@ -17,7 +17,7 @@
 #include "common.h"
 #include "ether.h"
 #include "arp.h"
-#include "misc.h"
+#include "utils.h"
 
 struct dump_config {
 	FILE *file_eth;

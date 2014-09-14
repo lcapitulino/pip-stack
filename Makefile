@@ -12,31 +12,31 @@ TESTS := check-ether
 
 all: $(BIN)
 
-misc.o: misc.c misc.h common.h
+utils.o: utils.c utils.h common.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-ipv4.o: ipv4.c ipv4.h misc.h common.h
+ipv4.o: ipv4.c ipv4.h utils.h common.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
 skbuf.o: skbuf.c skbuf.h common.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-arp.o: arp.c arp.h common.h misc.h ether.h
+arp.o: arp.c arp.h common.h utils.h ether.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-ether.o: ether.c ether.h common.h misc.h
+ether.o: ether.c ether.h common.h utils.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-uarp.o: uarp.c common.h ether.h arp.h misc.h ipv4.h
+uarp.o: uarp.c common.h ether.h arp.h utils.h ipv4.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-uarp: uarp.o ether.o misc.o arp.o ipv4.o -lefence -lreadline
+uarp: uarp.o ether.o utils.o arp.o ipv4.o -lefence -lreadline
 	$(QUIET_LK)$(CC) -o $@ $+
 
-dump.o: dump.c common.h ether.h arp.h misc.h
+dump.o: dump.c common.h ether.h arp.h utils.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-dump: dump.o ether.o misc.o arp.o -lefence
+dump: dump.o ether.o utils.o arp.o -lefence
 	$(QUIET_LK)$(CC) -o $@ $+
 
 ###
@@ -46,7 +46,7 @@ dump: dump.o ether.o misc.o arp.o -lefence
 check-ether.o: check-ether.c ether.h common.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-check-ether: check-ether.o ether.o misc.o -lcheck -lefence
+check-ether: check-ether.o ether.o utils.o -lcheck -lefence
 	$(QUIET_LK)$(CC) -o $@ $+
 
 check: $(TESTS)

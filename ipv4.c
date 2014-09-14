@@ -19,7 +19,7 @@
 #include <arpa/inet.h>
 
 #include "common.h"
-#include "misc.h"
+#include "utils.h"
 #include "ipv4.h"
 
 struct ipv4_object *ipv4_object_alloc(const char *ipv4_addr_str)

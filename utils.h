@@ -14,8 +14,8 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#ifndef MISC_H
-#define MISC_H
+#ifndef UTILS_H
+#define UTILS_H
 
 #include <stdio.h>
 #include <stddef.h>
@@ -28,4 +28,4 @@ void xsetunbuf(FILE *stream);
 int ipv4_addr_to_str(uint32_t addr, char *str, size_t len);
 void dump_data(FILE *stream, const uint8_t *data, size_t len);
 
-#endif /* MISC_H */
+#endif /* UTILS_H */

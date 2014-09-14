@@ -18,7 +18,7 @@
 #include <stddef.h>
 
 #include "common.h"
-#include "misc.h"
+#include "utils.h"
 
 void *mallocz(size_t size)
 {

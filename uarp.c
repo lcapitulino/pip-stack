@@ -23,7 +23,7 @@
 #include "ether.h"
 #include "arp.h"
 #include "ipv4.h"
-#include "misc.h"
+#include "utils.h"
 
 struct uarp_config {
 	const char *ifname;
