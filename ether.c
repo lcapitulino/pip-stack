@@ -165,7 +165,7 @@ int ether_dev_send_bcast(struct ether_device *dev, uint16_t type,
 {
 	uint8_t addr[6];
 
-	memset(addr, 0xff, sizeof(addr));
+	hwaddr_init(addr, 0xff);
 	return ether_dev_send(dev, addr, type, data, data_size);
 }
 
