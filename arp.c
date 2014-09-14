@@ -61,7 +61,7 @@ struct arp_packet *arp_packet_from_data(const uint8_t *data, size_t size)
 	return arp_pkt;
 }
 
-struct arp_packet *arp_build_request(uint8_t *sha, uint32_t spa,
+struct arp_packet *arp_build_request(const uint8_t *sha, uint32_t spa,
                                      uint16_t ptype, uint32_t tpa)
 {
 	struct arp_packet *arp_req;
