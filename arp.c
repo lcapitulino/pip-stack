@@ -70,12 +70,12 @@ struct arp_packet *arp_build_request(uint8_t *sha, uint32_t spa,
 	if (!arp_req)
 		return NULL;
 
-	*arp_req->htype = htons(1);
+	*arp_req->htype = htons(ARP_HTYPE_ETH);
 	*arp_req->ptype = htons(ptype);
 	*arp_req->hlen =  6;
 	*arp_req->plen =  4;
 	*arp_req->oper =  htons(ARP_OP_REQ);
-	memcpy(arp_req->sha, sha, 6);
+	hwaddr_cp(arp_req->sha, sha);
 	*arp_req->spa = htonl(spa);
 	*arp_req->tpa = htonl(tpa);
 
