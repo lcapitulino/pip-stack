@@ -22,24 +22,25 @@
 #include "utils.h"
 #include "ipv4.h"
 
-struct ipv4_object *ipv4_object_alloc(const char *ipv4_addr_str)
+struct ipv4_module *ipv4_module_alloc(const char *ipv4_addr_str)
 {
-	struct ipv4_object *ipv4;
+	struct ipv4_module *ipv4_mod;
 	in_addr_t addr;
 
 	addr = inet_network(ipv4_addr_str);
 	if (addr == -1)
 		return NULL;
 
-	ipv4 = mallocz(sizeof(*ipv4));
-	if (!ipv4)
+	ipv4_mod = mallocz(sizeof(*ipv4_mod));
+	if (!ipv4_mod)
 		return NULL;
 
-	memcpy(&ipv4->ipv4_addr, &addr, sizeof(ipv4->ipv4_addr));
-	return ipv4;
+	ipv4_mod->ipv4_addr = addr;
+
+	return ipv4_mod;
 }
 
-void ipv4_object_free(struct ipv4_object *ipv4)
+void ipv4_module_free(struct ipv4_module *ipv4_mod)
 {
-	free(ipv4);
+	free(ipv4_mod);
 }

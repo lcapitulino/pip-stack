@@ -19,12 +19,11 @@
 
 #include <stdint.h>
 
-/* XXX: I'm not sure how to call this. Is it an interface? */
-struct ipv4_object {
+struct ipv4_module {
 	uint32_t ipv4_addr;
 };
 
-struct ipv4_object *ipv4_object_alloc(const char *ipv4_addr_str);
-void ipv4_object_free(struct ipv4_object *ipv4);
+struct ipv4_module *ipv4_module_alloc(const char *ipv4_addr_str);
+void ipv4_module_free(struct ipv4_module *ipv4_mod);
 
 #endif /* IPV4_H */
