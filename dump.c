@@ -28,7 +28,7 @@ struct dump_config {
 static void usage(void)
 {
 	printf("dump: dump packets to specified files\n");
-	printf("Usage: dump -i <interface> -e <file> -a <file>\n");
+	printf("Usage: dump -i <interface> [-e file] [-a file]\n");
 	printf("   -i <interface>: tap interface to use\n");
 	printf("   -e <file>     : dump ethernet packates to <file>\n");
 	printf("   -a <file>     : dump ARP packates to <file>\n");
@@ -87,9 +87,10 @@ int main(int argc, char *argv[])
 			break;
 		}
 
-		ether_dump_frame(config.file_eth, frame);
+		if (config.file_eth)
+			ether_dump_frame(config.file_eth, frame);
 
-		if (ether_get_type(frame) == ETHER_TYPE_ARP) {
+		if (config.file_arp && ether_get_type(frame) == ETHER_TYPE_ARP) {
 			arp = arp_packet_from_data(ether_get_data(frame),
                                        ether_get_data_size(frame));
 			arp_dump_packet(config.file_arp, arp);
