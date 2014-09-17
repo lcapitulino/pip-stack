@@ -36,7 +36,7 @@ uarp: uarp.o ether.o utils.o arp.o ipv4.o -lefence -lreadline
 dump.o: dump.c common.h ether.h arp.h utils.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-dump: dump.o ether.o utils.o arp.o -lefence
+dump: dump.o ether.o utils.o arp.o ipv4.o -lefence
 	$(QUIET_LK)$(CC) -o $@ $+
 
 ###
