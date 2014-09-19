@@ -50,12 +50,12 @@ struct arp_packet *arp_packet_from_data(const uint8_t *data, size_t size)
 	if (!arp_pkt)
 		return NULL;
 
-	/*
-	 * My router (a d-link DIR-825) sends ARP requests with a
-	 * ARP packet of 46 bytes. It adds padding at the end. I don't
-	 * know why it does that, but the line below limits it to
-	 * ARP_PACKET_SIZE
-	 */
+	if (size < ARP_PACKET_SIZE) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	/* Ignore extra bytes, they are usually padding anyway */
 	memcpy(arp_pkt->buf, data, ARP_PACKET_SIZE);
 
 	return arp_pkt;
