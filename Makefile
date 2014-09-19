@@ -15,6 +15,9 @@ all: $(BIN)
 utils.o: utils.c utils.h common.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
+udp.o: udp.c udp.h utils.h common.h
+	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
+
 ipv4.o: ipv4.c ipv4.h utils.h common.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
