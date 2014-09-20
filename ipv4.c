@@ -22,16 +22,25 @@
 #include "utils.h"
 #include "ipv4.h"
 
-static struct ipv4_datagram *ipv4_datagram_alloc(void)
+struct ipv4_datagram *ipv4_datagram_from_data(const uint8_t *data,
+                                              size_t size)
 {
 	struct ipv4_datagram *ipv4_dtg;
+	int err_no;
 	uint8_t *p;
 
 	ipv4_dtg = mallocz(sizeof(*ipv4_dtg));
 	if (!ipv4_dtg)
 		return NULL;
 
-	p = ipv4_dtg->buf;
+	p = mallocz(size);
+	if (!p) {
+		err_no = errno;
+		free(ipv4_dtg);
+		errno = err_no;
+		return NULL;
+	}
+
 	ipv4_dtg->version_ihl  =  (uint8_t *)  &p[0];
 	ipv4_dtg->ds_ecn       =  (uint8_t *)  &p[1];
 	ipv4_dtg->total_length =  (uint16_t *) &p[2];
@@ -42,38 +51,21 @@ static struct ipv4_datagram *ipv4_datagram_alloc(void)
 	ipv4_dtg->checksum      = (uint16_t *) &p[10];
 	ipv4_dtg->src_addr      = (uint32_t *) &p[12];
 	ipv4_dtg->dst_addr      = (uint32_t *) &p[16];
+	ipv4_dtg->data          = (uint8_t *) &p[20];
+	ipv4_dtg->buf = p;
 
-	ipv4_dtg->data = (uint8_t *) &p[20];
-
-	return ipv4_dtg;
-}
-
-struct ipv4_datagram *ipv4_datagram_from_data(const uint8_t *data,
-                                              size_t size)
-{
-	struct ipv4_datagram *ipv4_dtg;
-
-	ipv4_dtg = ipv4_datagram_alloc();
-	if (!ipv4_dtg)
-		return NULL;
-
-	if (size > IPV4_DATAGRAM_SIZE)
-		size = IPV4_DATAGRAM_SIZE;
-
-	memcpy(ipv4_dtg->buf, data, size);
-
-	/*
-	 * Header is fixed in 20 bytes because we don't
-	 * support options
-	 */
-	ipv4_dtg->data_size = size - 20;
+	ipv4_dtg->data_size = size - IPV4_HEADER_SIZE;
+	memcpy(p, data, size);
 
 	return ipv4_dtg;
 }
 
 void ipv4_datagram_free(struct ipv4_datagram *ipv4_dtg)
 {
-	free(ipv4_dtg);
+	if (ipv4_dtg) {
+		free(ipv4_dtg->buf);
+		free(ipv4_dtg);
+	}
 }
 
 uint8_t ipv4_get_version(const struct ipv4_datagram *ipv4_dtg)

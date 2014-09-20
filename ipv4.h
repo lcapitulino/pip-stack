@@ -19,12 +19,8 @@
 
 #include <stdint.h>
 
-/*
- * According to the TCP/IP Ilustrated book (2nd edition), this
- * this the minimum IPv4 datagram size that a host is required
- * to be able to receive (XXX: confirm this some RFC).
- */
-#define IPV4_DATAGRAM_SIZE 576
+/* Options are not supported */
+#define IPV4_HEADER_SIZE 20
 
 #define IPV4_PROT_UDP 17
 
@@ -43,10 +39,10 @@ struct ipv4_datagram {
 	uint16_t *checksum;
 	uint32_t *src_addr;
 	uint32_t *dst_addr;
-
 	uint8_t *data;
+
+	uint8_t *buf;
 	size_t data_size;
-	uint8_t buf[IPV4_DATAGRAM_SIZE];
 };
 
 struct ipv4_datagram *ipv4_datagram_from_data(const uint8_t *data,
