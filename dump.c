@@ -19,22 +19,25 @@
 #include "arp.h"
 #include "ipv4.h"
 #include "utils.h"
+#include "udp.h"
 
 struct dump_config {
 	FILE *file_eth;
 	FILE *file_arp;
 	FILE *file_ipv4;
+	FILE *file_udp;
 	const char *ifname;
 };
 
 static void usage(void)
 {
 	printf("dump: dump packets to specified files\n");
-	printf("Usage: dump -i <interface> [-e file] [-a file]\n");
+	printf("Usage: dump -i <interface> [-e file] [-a file] [-4 file] [-u file]\n");
 	printf("   -i <interface>: tap interface to use\n");
 	printf("   -e <file>     : dump ethernet packates to <file>\n");
 	printf("   -a <file>     : dump ARP packates to <file>\n");
 	printf("   -4 <file>     : dump IPv4 datagrams to <file>\n");
+	printf("   -u <file>     : dump UDP datagrams to <file>\n");
 	printf("\n");
 }
 
@@ -45,7 +48,7 @@ static void dump_parse_cmdline(int argc, char *argv[],
 
 	memset(config, 0, sizeof(*config));
 
-	while ((opt = getopt(argc, argv, "a:e:4:i:h")) != -1) {
+	while ((opt = getopt(argc, argv, "a:e:4:u:i:h")) != -1) {
 		switch (opt) {
 		case 'a':
 			config->file_arp = xfopen(optarg, "a");
@@ -55,6 +58,9 @@ static void dump_parse_cmdline(int argc, char *argv[],
 			break;
 		case '4':
 			config->file_ipv4 = xfopen(optarg, "a");
+			break;
+		case 'u':
+			config->file_udp = xfopen(optarg, "a");
 			break;
 		case 'i':
 			config->ifname = optarg;
@@ -67,9 +73,34 @@ static void dump_parse_cmdline(int argc, char *argv[],
 	}
 }
 
-int main(int argc, char *argv[])
+static void dump_ipv4(const struct dump_config *config,
+                      const struct ether_frame *frame)
 {
 	struct ipv4_datagram *ipv4_dtg;
+	struct udp_datagram *udp_dtg;
+
+	ipv4_dtg = ipv4_datagram_from_data(ether_get_data(frame),
+                                       ether_get_data_size(frame));
+	if (!ipv4_dtg) {
+		fprintf(stderr, "ERROR: %s\n", strerror(errno));
+		return;
+	}
+
+	if (config->file_ipv4)
+		ipv4_dump_datagram(config->file_ipv4, ipv4_dtg);
+
+	if (config->file_udp && ipv4_get_protocol(ipv4_dtg) == IPV4_PROT_UDP) {
+		udp_dtg = udp_datagram_from_data(ipv4_get_data(ipv4_dtg),
+                                         ipv4_get_data_size(ipv4_dtg));
+		udp_dump_datagram(config->file_udp, udp_dtg);
+		udp_datagram_free(udp_dtg);
+	}
+
+	ipv4_datagram_free(ipv4_dtg);
+}
+
+int main(int argc, char *argv[])
+{
 	struct dump_config config;
 	struct ether_frame *frame;
 	struct ether_device *dev;
@@ -104,12 +135,8 @@ int main(int argc, char *argv[])
 			arp_packet_free(arp);
 		}
 
-		if (config.file_ipv4 && ether_get_type(frame) == ETHER_TYPE_IPV4) {
-			ipv4_dtg = ipv4_datagram_from_data(ether_get_data(frame),
-                                               ether_get_data_size(frame));
-			ipv4_dump_datagram(config.file_ipv4, ipv4_dtg);
-			ipv4_datagram_free(ipv4_dtg);
-		}
+		if (ether_get_type(frame) == ETHER_TYPE_IPV4)
+			dump_ipv4(&config, frame);
 
 		ether_frame_free(frame);
 	}
