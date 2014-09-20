@@ -26,6 +26,8 @@
  */
 #define IPV4_DATAGRAM_SIZE 576
 
+#define IPV4_PROT_UDP 17
+
 struct ipv4_module {
 	uint32_t ipv4_addr;
 };
