@@ -8,3 +8,4 @@ gcc.txt
 core.*
 check-*
 !check-*.c
+test/udp-send-str
