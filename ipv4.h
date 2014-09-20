@@ -64,6 +64,7 @@ uint16_t ipv4_get_checksum(const struct ipv4_datagram *ipv4_dtg);
 uint32_t ipv4_get_src_addr(const struct ipv4_datagram *ipv4_dtg);
 uint32_t ipv4_get_dst_addr(const struct ipv4_datagram *ipv4_dtg);
 size_t ipv4_get_data_size(const struct ipv4_datagram *ipv4_dtg);
+uint8_t *ipv4_get_data(const struct ipv4_datagram *ipv4_dtg);
 void ipv4_dump_datagram(FILE *stream, const struct ipv4_datagram *ipv4_dtg);
 
 struct ipv4_module *ipv4_module_alloc(const char *ipv4_addr_str);

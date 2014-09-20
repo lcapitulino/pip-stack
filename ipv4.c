@@ -146,6 +146,11 @@ size_t ipv4_get_data_size(const struct ipv4_datagram *ipv4_dtg)
 	return ipv4_dtg->data_size;
 }
 
+uint8_t *ipv4_get_data(const struct ipv4_datagram *ipv4_dtg)
+{
+	return ipv4_dtg->data;
+}
+
 struct ipv4_module *ipv4_module_alloc(const char *ipv4_addr_str)
 {
 	struct ipv4_module *ipv4_mod;
