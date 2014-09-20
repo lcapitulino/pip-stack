@@ -57,11 +57,6 @@ struct ipv4_datagram *ipv4_datagram_from_data(const uint8_t *data,
 	if (!ipv4_dtg)
 		return NULL;
 
-	if (size < IPV4_DATAGRAM_SIZE) {
-		errno = EINVAL;
-		return NULL;
-	}
-
 	if (size > IPV4_DATAGRAM_SIZE)
 		size = IPV4_DATAGRAM_SIZE;
 
