@@ -27,5 +27,6 @@ FILE *xfopen(const char *path, const char *mode);
 void xsetunbuf(FILE *stream);
 int ipv4_addr_to_str(uint32_t addr, char *str, size_t len);
 void dump_data(FILE *stream, const uint8_t *data, size_t len);
+uint16_t calculate_net_checksum(const uint8_t *data, int len);
 
 #endif /* UTILS_H */
