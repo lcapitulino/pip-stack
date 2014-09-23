@@ -161,6 +161,11 @@ struct ipv4_module *ipv4_module_alloc(const char *ipv4_addr_str)
 	return ipv4_mod;
 }
 
+bool ipv4_checksum_ok(const struct ipv4_datagram *ipv4_dtg)
+{
+	return calculate_net_checksum(ipv4_dtg->buf, 20) == 0;
+}
+
 void ipv4_module_free(struct ipv4_module *ipv4_mod)
 {
 	free(ipv4_mod);
@@ -182,7 +187,8 @@ void ipv4_dump_datagram(FILE *stream, const struct ipv4_datagram *ipv4_dtg)
 	fprintf(stream, "  frag offset: %d\n", ipv4_get_fragoffset(ipv4_dtg));
 	fprintf(stream, "  ttl: %d\n", ipv4_get_ttl(ipv4_dtg));
 	fprintf(stream, "  protocol: %d\n", ipv4_get_protocol(ipv4_dtg));
-	fprintf(stream, "  checksum: 0x%x\n", ipv4_get_checksum(ipv4_dtg));
+	fprintf(stream, "  checksum: 0x%x ", ipv4_get_checksum(ipv4_dtg));
+	fprintf(stream, "  (%s)\n", ipv4_checksum_ok(ipv4_dtg) ? "OK" : "FAILED");
 
 	ipv4_addr_to_str(ipv4_get_src_addr(ipv4_dtg), str, sizeof(str));
 	fprintf(stream, "  src addr: %s\n", str);
