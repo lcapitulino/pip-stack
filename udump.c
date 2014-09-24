@@ -31,7 +31,7 @@ struct dump_config {
 
 static void usage(void)
 {
-	printf("dump: dump packets to specified files\n");
+	printf("udump: dump packets to specified files\n");
 	printf("Usage: dump -i <interface> [-e file] [-a file] [-4 file] [-u file]\n");
 	printf("   -i <interface>: tap interface to use\n");
 	printf("   -e <file>     : dump ethernet packates to <file>\n");

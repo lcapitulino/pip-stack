@@ -7,7 +7,7 @@ endif
 
 CC := gcc
 CFLAGS := -Wall -ggdb -O0
-BIN := uarp dump
+BIN := uarp udump
 TESTS := check-utils check-ether check-arp check-ipv4
 
 all: $(BIN)
@@ -33,10 +33,10 @@ uarp.o: uarp.c common.h ether.h arp.h utils.h ipv4.h
 uarp: uarp.o ether.o utils.o arp.o ipv4.o -lefence -lreadline
 	$(QUIET_LK)$(CC) -o $@ $+
 
-dump.o: dump.c common.h ether.h arp.h udp.h utils.h
+udump.o: udump.c common.h ether.h arp.h udp.h utils.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-dump: dump.o ether.o utils.o arp.o ipv4.o udp.o -lefence
+udump: udump.o ether.o utils.o arp.o ipv4.o udp.o -lefence
 	$(QUIET_LK)$(CC) -o $@ $+
 
 ###
