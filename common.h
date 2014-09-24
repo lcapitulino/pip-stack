@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <inttypes.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <arpa/inet.h>
 
