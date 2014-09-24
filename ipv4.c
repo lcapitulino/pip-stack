@@ -27,6 +27,11 @@ struct ipv4_module *ipv4_module_alloc(const char *ipv4_addr_str)
 	struct ipv4_module *ipv4_mod;
 	in_addr_t addr;
 
+	if (!ipv4_addr_str) {
+		errno = EINVAL;
+		return NULL;
+	}
+
 	addr = inet_network(ipv4_addr_str);
 	if (addr == -1)
 		return NULL;
