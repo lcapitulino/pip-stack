@@ -105,7 +105,7 @@ uint8_t ipv4_get_flags(const struct ipv4_datagram *ipv4_dtg)
 
 uint16_t ipv4_get_fragoffset(const struct ipv4_datagram *ipv4_dtg)
 {
-	return ntohs(*ipv4_dtg->flags_fragoff) & 0xe000;
+	return ntohs(*ipv4_dtg->flags_fragoff & 0xe000);
 }
 
 uint8_t ipv4_get_ttl(const struct ipv4_datagram *ipv4_dtg)
@@ -140,7 +140,7 @@ size_t ipv4_get_data_size(const struct ipv4_datagram *ipv4_dtg)
 
 uint8_t *ipv4_get_data(const struct ipv4_datagram *ipv4_dtg)
 {
-	return ipv4_dtg->data;
+	return ipv4_get_data_size(ipv4_dtg) > 0 ? ipv4_dtg->data : NULL;
 }
 
 struct ipv4_module *ipv4_module_alloc(const char *ipv4_addr_str)
