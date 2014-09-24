@@ -87,12 +87,42 @@ START_TEST(test_ipv4_datagram_from_data)
 }
 END_TEST
 
-#if 0
 START_TEST(test_ipv4_build_datagram)
 {
+	struct ipv4_datagram *ipv4_dtg;
+	in_addr_t src_addr, dst_addr;
+	uint8_t data[128];
+	int res;
+
+	memset(data, 0xff, sizeof(data));
+	src_addr = inet_network("192.168.0.44");
+	dst_addr = inet_network("192.168.0.4");
+
+	ipv4_dtg = ipv4_build_datagram(src_addr, dst_addr, IPV4_PROT_UDP,
+                                   data, sizeof(data));
+	ck_assert(ipv4_dtg != NULL);
+
+	ck_assert_int_eq(ipv4_get_version(ipv4_dtg), 4);
+	ck_assert_int_eq(ipv4_get_ihl(ipv4_dtg), 5);
+	ck_assert_int_eq(ipv4_get_ds(ipv4_dtg), 0);
+	ck_assert_int_eq(ipv4_get_ecn(ipv4_dtg), 0);
+	ck_assert_int_eq(ipv4_get_length(ipv4_dtg),IPV4_HEADER_SIZE + sizeof(data));
+	ck_assert_int_eq(ipv4_get_id(ipv4_dtg), 1);
+	ck_assert_int_eq(ipv4_get_flags(ipv4_dtg), IPV4_FLAGS_DF);
+	ck_assert_int_eq(ipv4_get_fragoffset(ipv4_dtg), 0);
+	ck_assert_int_eq(ipv4_get_ttl(ipv4_dtg), IPV4_DEF_TTL);
+	ck_assert_int_eq(ipv4_get_protocol(ipv4_dtg), IPV4_PROT_UDP);
+	ck_assert_int_eq(ipv4_checksum_ok(ipv4_dtg), true);
+	ck_assert_int_eq(ipv4_get_src_addr(ipv4_dtg), src_addr);
+	ck_assert_int_eq(ipv4_get_dst_addr(ipv4_dtg), dst_addr);
+	ck_assert_int_eq(ipv4_get_data_size(ipv4_dtg), sizeof(data));
+
+	res = memcmp(ipv4_get_data(ipv4_dtg), data, sizeof(data));
+	ck_assert_int_eq(res, 0);
+
+	ipv4_datagram_free(ipv4_dtg);
 }
 END_TEST
-#endif
 
 Suite *ipv4_suite(void)
 {
@@ -108,6 +138,7 @@ Suite *ipv4_suite(void)
 
 	dt_tests = tcase_create("datagram");
 	tcase_add_test(dt_tests, test_ipv4_datagram_from_data);
+	tcase_add_test(dt_tests, test_ipv4_build_datagram);
 	suite_add_tcase(s, dt_tests);
 
 	return s;
