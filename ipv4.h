@@ -22,7 +22,16 @@
 /* Options are not supported */
 #define IPV4_HEADER_SIZE 20
 
+/* Supported protocols */
 #define IPV4_PROT_UDP 17
+
+/* Flags */
+#define IPV4_FLAGS_MF 0x1
+#define IPV4_FLAGS_DF 0x2
+#define IPV4_FLAGS_RV 0x4
+
+/* Default values */
+#define IPV4_DEF_TTL 64
 
 struct ipv4_module {
 	uint32_t ipv4_addr;
