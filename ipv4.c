@@ -22,6 +22,29 @@
 #include "utils.h"
 #include "ipv4.h"
 
+struct ipv4_module *ipv4_module_alloc(const char *ipv4_addr_str)
+{
+	struct ipv4_module *ipv4_mod;
+	in_addr_t addr;
+
+	addr = inet_network(ipv4_addr_str);
+	if (addr == -1)
+		return NULL;
+
+	ipv4_mod = mallocz(sizeof(*ipv4_mod));
+	if (!ipv4_mod)
+		return NULL;
+
+	ipv4_mod->ipv4_addr = addr;
+
+	return ipv4_mod;
+}
+
+void ipv4_module_free(struct ipv4_module *ipv4_mod)
+{
+	free(ipv4_mod);
+}
+
 struct ipv4_datagram *ipv4_datagram_from_data(const uint8_t *data,
                                               size_t size)
 {
@@ -143,32 +166,9 @@ uint8_t *ipv4_get_data(const struct ipv4_datagram *ipv4_dtg)
 	return ipv4_get_data_size(ipv4_dtg) > 0 ? ipv4_dtg->data : NULL;
 }
 
-struct ipv4_module *ipv4_module_alloc(const char *ipv4_addr_str)
-{
-	struct ipv4_module *ipv4_mod;
-	in_addr_t addr;
-
-	addr = inet_network(ipv4_addr_str);
-	if (addr == -1)
-		return NULL;
-
-	ipv4_mod = mallocz(sizeof(*ipv4_mod));
-	if (!ipv4_mod)
-		return NULL;
-
-	ipv4_mod->ipv4_addr = addr;
-
-	return ipv4_mod;
-}
-
 bool ipv4_checksum_ok(const struct ipv4_datagram *ipv4_dtg)
 {
 	return calculate_net_checksum(ipv4_dtg->buf, 20) == 0;
-}
-
-void ipv4_module_free(struct ipv4_module *ipv4_mod)
-{
-	free(ipv4_mod);
 }
 
 void ipv4_dump_datagram(FILE *stream, const struct ipv4_datagram *ipv4_dtg)
