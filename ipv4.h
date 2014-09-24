@@ -54,6 +54,12 @@ struct ipv4_datagram {
 	size_t data_size;
 };
 
+struct ipv4_datagram *ipv4_build_datagram(uint32_t src_addr,
+                                          uint32_t dst_addr,
+                                          uint8_t  protocol,
+                                          const uint8_t *data,
+                                          size_t data_size);
+
 struct ipv4_datagram *ipv4_datagram_from_data(const uint8_t *data,
                                               size_t size);
 void ipv4_datagram_free(struct ipv4_datagram *ipv4_dtg);
@@ -72,6 +78,7 @@ uint32_t ipv4_get_src_addr(const struct ipv4_datagram *ipv4_dtg);
 uint32_t ipv4_get_dst_addr(const struct ipv4_datagram *ipv4_dtg);
 size_t ipv4_get_data_size(const struct ipv4_datagram *ipv4_dtg);
 uint8_t *ipv4_get_data(const struct ipv4_datagram *ipv4_dtg);
+bool ipv4_checksum_ok(const struct ipv4_datagram *ipv4_dtg);
 void ipv4_dump_datagram(FILE *stream, const struct ipv4_datagram *ipv4_dtg);
 
 struct ipv4_module *ipv4_module_alloc(const char *ipv4_addr_str);

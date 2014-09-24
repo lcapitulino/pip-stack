@@ -50,8 +50,7 @@ void ipv4_module_free(struct ipv4_module *ipv4_mod)
 	free(ipv4_mod);
 }
 
-struct ipv4_datagram *ipv4_datagram_from_data(const uint8_t *data,
-                                              size_t size)
+static struct ipv4_datagram *ipv4_datagram_alloc(size_t data_size)
 {
 	struct ipv4_datagram *ipv4_dtg;
 	int err_no;
@@ -61,7 +60,7 @@ struct ipv4_datagram *ipv4_datagram_from_data(const uint8_t *data,
 	if (!ipv4_dtg)
 		return NULL;
 
-	p = mallocz(size);
+	p = mallocz(data_size + IPV4_HEADER_SIZE);
 	if (!p) {
 		err_no = errno;
 		free(ipv4_dtg);
@@ -82,8 +81,67 @@ struct ipv4_datagram *ipv4_datagram_from_data(const uint8_t *data,
 	ipv4_dtg->data          = (uint8_t *) &p[20];
 	ipv4_dtg->buf = p;
 
-	ipv4_dtg->data_size = size - IPV4_HEADER_SIZE;
-	memcpy(p, data, size);
+	ipv4_dtg->data_size = data_size;
+
+	return ipv4_dtg;
+}
+
+struct ipv4_datagram *ipv4_datagram_from_data(const uint8_t *data,
+                                              size_t size)
+{
+	struct ipv4_datagram *ipv4_dtg;
+
+	/* size includes IPV4_HEADER_SIZE */
+	ipv4_dtg = ipv4_datagram_alloc(size - IPV4_HEADER_SIZE);
+	if (!ipv4_dtg)
+		return NULL;
+
+	memcpy(ipv4_dtg->buf, data, size);
+
+	return ipv4_dtg;
+}
+
+/* XXX: What's the best way to do this? */
+static uint16_t ipv4_gen_id(void)
+{
+	static uint16_t id = 0;
+
+	if (++id == USHRT_MAX)
+		id = 1;
+
+	return id;
+}
+
+struct ipv4_datagram *ipv4_build_datagram(uint32_t src_addr,
+                                          uint32_t dst_addr,
+                                          uint8_t  protocol,
+                                          const uint8_t *data,
+                                          size_t data_size)
+{
+	struct ipv4_datagram *ipv4_dtg;
+	uint16_t csum;
+
+	ipv4_dtg = ipv4_datagram_alloc(data_size);
+	if (!ipv4_dtg)
+		return NULL;
+
+	/* fields provided by the user */
+	*ipv4_dtg->src_addr = htonl(src_addr);
+	*ipv4_dtg->dst_addr = htonl(dst_addr);
+	*ipv4_dtg->prot     = protocol;
+
+	/* hardcoded fields */
+	*ipv4_dtg->version_ihl = 0x45; /* version: ipv4, IHL 5 (20 bytes header) */
+	*ipv4_dtg->total_length  = htons(IPV4_HEADER_SIZE + data_size);
+	*ipv4_dtg->id            = htons(ipv4_gen_id());
+	*ipv4_dtg->flags_fragoff = htons(IPV4_FLAGS_DF << 13);
+	*ipv4_dtg->ttl           = IPV4_DEF_TTL;
+
+	/* calculate checksum */
+	csum = calculate_net_checksum(ipv4_dtg->buf, IPV4_HEADER_SIZE);
+	*ipv4_dtg->checksum = csum;
+
+	memcpy(ipv4_dtg->data, data, data_size);
 
 	return ipv4_dtg;
 }
