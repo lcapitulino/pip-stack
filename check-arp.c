@@ -24,16 +24,16 @@ const uint8_t hwaddr_sender[6] = { 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6 };
 const uint8_t hwaddr_target[6] = { 0xa1, 0xb2, 0xc3, 0xd4, 0xe5, 0xf6 };
 
 const uint8_t arp_req[ARP_PACKET_SIZE] = {
-             0x00, 0x01,       /* hardware type: ethernet */
-			 0x08, 0x00,       /* protocol type: IPv4 */
-			 0x06,             /* hardware addr size: 6 (ether) */
-			 0x04,             /* protocol addr size: 4 (ipv4) */
-			 0x00, 0x02,       /* operation: ARP reply */
-			 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, /* sender hwaddr */
-			 0xc0, 0xa8, 0x00, 0x2c, /* sender prot addr: 192.168.0.44 */
-			 0xa1, 0xb2, 0xc3, 0xd4, 0xe5, 0xf6, /* target hwaddr */
-			 0xc0, 0xa8, 0x00, 0x04  /* target prot addr: 192.168.0.4 */
-			 };
+               0x00, 0x01,       /* hardware type: ethernet */
+               0x08, 0x00,       /* protocol type: IPv4 */
+               0x06,             /* hardware addr size: 6 (ether) */
+               0x04,             /* protocol addr size: 4 (ipv4) */
+               0x00, 0x02,       /* operation: ARP reply */
+               0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, /* sender hwaddr */
+               0xc0, 0xa8, 0x00, 0x2c, /* sender prot addr: 192.168.0.44 */
+               0xa1, 0xb2, 0xc3, 0xd4, 0xe5, 0xf6, /* target hwaddr */
+               0xc0, 0xa8, 0x00, 0x04  /* target prot addr: 192.168.0.4 */
+};
 
 /* We test a ARP reply here because it fills all fields */
 START_TEST(test_arp_packet_from_data)
