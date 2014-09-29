@@ -30,7 +30,7 @@ ether.o: ether.c ether.h common.h utils.h
 uarp.o: uarp.c common.h ether.h arp.h utils.h ipv4.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-uarp: uarp.o ether.o utils.o arp.o ipv4.o -lefence -lreadline
+uarp: uarp.o ether.o utils.o arp.o ipv4.o -lefence -lreadline -lconfig
 	$(QUIET_LK)$(CC) -o $@ $+
 
 udump.o: udump.c common.h ether.h arp.h udp.h utils.h

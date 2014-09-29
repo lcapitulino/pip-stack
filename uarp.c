@@ -18,6 +18,7 @@
 #include <signal.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <libconfig.h>
 
 #include "common.h"
 #include "ether.h"
@@ -263,38 +264,51 @@ static void uarp_shell(struct uarp_protocol_stack *stack)
 
 static void usage(void)
 {
-	printf("uarp: a user-space ARP tool\n");
-	printf("Usage: uarp -i <interface> -a <hwaddr> -I <ipv4addr>\n");
-	printf("   -i <interface>: tap interface to use\n");
-	printf("   -a <hwaddr>   : hardware address\n");
-	printf("   -I            : IPv4 address\n");
-	printf("\n");
+	printf("Usage: uarp <config-file>\n");
 }
 
-static void uarp_parse_cmdline(int argc, char *argv[],
-                               struct uarp_config *config)
+static void xconfig_lookup_string(config_t *cfg,
+                                  const char *key, const char **str,
+								  const char *config_file_path)
 {
-	int opt;
+	int ret;
 
-	memset(config, 0, sizeof(*config));
-
-	while ((opt = getopt(argc, argv, "a:hi:I:")) != -1) {
-		switch (opt) {
-		case 'a':
-			config->hwaddr_str = optarg;
-			break;
-		case 'i':
-			config->ifname = optarg;
-			break;
-		case 'I':
-			config->ipv4_addr_str = optarg;
-			break;
-		case 'h':
-		default:
-			usage();
-			exit(1);
-		}
+	ret = config_lookup_string(cfg, key, str);
+	if (!ret) {
+		fprintf(stderr, "ERROR: could not locate '%s' in '%s'\n",
+                        "iface", config_file_path);
+		exit(1);
 	}
+}
+
+static void read_ipv4_config(const char *config_file_path,
+                             struct uarp_config *uarp_cfg)
+{
+	const char *str;
+	config_t cfg;
+	int ret;
+
+	config_init(&cfg);
+
+	ret = config_read_file(&cfg, config_file_path);
+	if (!ret) {
+		fprintf(stderr, "%s:%d - %s\n",
+                        config_error_file(&cfg),
+						config_error_line(&cfg),
+						config_error_text(&cfg));
+		exit(1);
+	}
+
+	xconfig_lookup_string(&cfg, "iface", &str, config_file_path);
+	uarp_cfg->ifname = xstrdup(str);
+
+	xconfig_lookup_string(&cfg, "ipv4_addr", &str, config_file_path);
+	uarp_cfg->ipv4_addr_str = xstrdup(str);
+
+	xconfig_lookup_string(&cfg, "hwaddr", &str, config_file_path);
+	uarp_cfg->hwaddr_str = xstrdup(str);
+
+	config_destroy(&cfg);
 }
 
 int main(int argc, char *argv[])
@@ -306,7 +320,12 @@ int main(int argc, char *argv[])
 	uint8_t hwaddr[6];
 	int err;
 
-	uarp_parse_cmdline(argc, argv, &config);
+	if (argc != 2) {
+		usage();
+		exit(1);
+	}
+
+	read_ipv4_config(argv[1], &config);
 	die_if_not_passed("ifname", config.ifname);
 	die_if_not_passed("hwaddr", config.hwaddr_str);
 	die_if_not_passed("ipv4addr", config.ipv4_addr_str);
