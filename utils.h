@@ -22,10 +22,13 @@
 #include <stdint.h>
 
 void *mallocz(size_t size);
+char *xstrdup(const char *s);
+
 void die_if_not_passed(const char *opt, const char *var);
 FILE *xfopen(const char *path, const char *mode);
 void xsetunbuf(FILE *stream);
 int ipv4_addr_to_str(uint32_t addr, char *str, size_t len);
+uint32_t xinet_aton(const char *addr_str);
 void dump_data(FILE *stream, const uint8_t *data, size_t len);
 uint16_t calculate_net_checksum(const uint8_t *data, int len);
 

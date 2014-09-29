@@ -31,6 +31,19 @@ void *mallocz(size_t size)
 	return p;
 }
 
+char *xstrdup(const char *s)
+{
+	char *r;
+
+	r = strdup(s);
+	if (!r) {
+		perror("strdup()");
+		exit(1);
+	}
+
+	return r;
+}
+
 void die_if_not_passed(const char *opt, const char *var)
 {
 	if (!var) {
@@ -77,6 +90,21 @@ int ipv4_addr_to_str(uint32_t addr, char *str, size_t len)
 
 	strncpy(str, p, len);
 	return 0;
+}
+
+uint32_t xinet_aton(const char *addr_str)
+{
+	struct in_addr in_addr;
+	int ret;
+
+	in_addr.s_addr = 0;
+	ret = inet_aton(addr_str, &in_addr);
+	if (!ret) {
+		fprintf(stderr, "bad address: %s\n", addr_str);
+		exit(1);
+	}
+
+	return in_addr.s_addr;
 }
 
 void dump_data(FILE *stream, const uint8_t *data, size_t len)
