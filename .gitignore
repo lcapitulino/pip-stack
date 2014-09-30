@@ -4,6 +4,7 @@ tags
 *.swp
 uarp
 udump
+uping
 gcc.txt
 core.*
 check-*
