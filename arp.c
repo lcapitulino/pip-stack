@@ -247,15 +247,11 @@ out:
 	return ret;
 }
 
-int arp_find_hwaddr(struct ether_device *dev, uint32_t ipv4_src_addr,
-                    uint32_t ipv4_dst_addr, uint8_t *hwaddr)
+int arp_send_request(struct ether_device *dev, uint32_t ipv4_src_addr,
+                     uint32_t ipv4_dst_addr)
 {
-	struct ether_dispatch dispatch;
-	struct arp_handler_data data;
 	struct arp_packet *arp_req;
 	int err;
-
-	hwaddr_init(hwaddr, 0);
 
 	arp_req = arp_build_request(dev->hwaddr, ipv4_src_addr, ETHER_TYPE_IPV4,
                                 ipv4_dst_addr);
@@ -270,6 +266,23 @@ int arp_find_hwaddr(struct ether_device *dev, uint32_t ipv4_src_addr,
 		errno = err;
 		return -1;
 	}
+
+	arp_packet_free(arp_req);
+	return 0;
+}
+
+int arp_find_hwaddr(struct ether_device *dev, uint32_t ipv4_src_addr,
+                    uint32_t ipv4_dst_addr, uint8_t *hwaddr)
+{
+	struct ether_dispatch dispatch;
+	struct arp_handler_data data;
+	int err;
+
+	hwaddr_init(hwaddr, 0);
+
+	err = arp_send_request(dev, ipv4_src_addr, ipv4_dst_addr);
+	if (err < 0)
+		return -1;
 
 	data.ipv4_dst_addr = ipv4_dst_addr;
 	data.hwaddr = hwaddr;
