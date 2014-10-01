@@ -328,10 +328,12 @@ static int uping_handle_icmp(struct ether_frame *frame, void *data)
 	if (!ipv4_dtg)
 		return ETHER_DISP_ERR;
 
+	if (!ipv4_datagram_is_good(ipv4_dtg))
+		goto out;
+
 	if (ipv4_get_protocol(ipv4_dtg) != IPV4_PROT_ICMP)
 		goto out;
 
-	/* TODO: Check all other fields (version, ihl, checksum, etc) */
 	p = ipv4_get_data(ipv4_dtg);
 	assert(p != NULL);
 
