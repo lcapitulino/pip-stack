@@ -18,7 +18,7 @@ utils.o: utils.c utils.h common.h
 udp.o: udp.c udp.h utils.h common.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-ipv4.o: ipv4.c ipv4.h utils.h common.h
+ipv4.o: ipv4.c ipv4.h ether.h utils.h common.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
 arp.o: arp.c arp.h common.h utils.h ether.h

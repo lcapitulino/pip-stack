@@ -21,6 +21,7 @@
 #include "common.h"
 #include "utils.h"
 #include "ipv4.h"
+#include "ether.h"
 
 struct ipv4_module *ipv4_module_alloc(const char *ipv4_addr_str)
 {
@@ -229,6 +230,16 @@ uint8_t *ipv4_get_data(const struct ipv4_datagram *ipv4_dtg)
 	return ipv4_get_data_size(ipv4_dtg) > 0 ? ipv4_dtg->data : NULL;
 }
 
+uint8_t *ipv4_get_datagram(const struct ipv4_datagram *ipv4_dtg)
+{
+	return ipv4_dtg->buf;
+}
+
+uint16_t ipv4_get_datagram_size(const struct ipv4_datagram *ipv4_dtg)
+{
+	return ipv4_dtg->data_size + IPV4_HEADER_SIZE;
+}
+
 bool ipv4_checksum_ok(const struct ipv4_datagram *ipv4_dtg)
 {
 	return calculate_net_checksum(ipv4_dtg->buf, 20) == 0;
@@ -260,4 +271,25 @@ void ipv4_dump_datagram(FILE *stream, const struct ipv4_datagram *ipv4_dtg)
 	fprintf(stream, "  dst addr: %s\n", str);
 
 	fprintf(stream, "\n");
+}
+
+int ipv4_send(struct ether_device *dev, struct ipv4_module *ipv4_mod,
+              uint32_t ipv4_dst_addr, uint8_t *dst_hwaddr, uint8_t protocol,
+              const uint8_t *data, size_t data_size)
+{
+	struct ipv4_datagram *ipv4_dtg;
+	int ret;
+
+	ipv4_dtg = ipv4_build_datagram(ipv4_mod->ipv4_addr, ipv4_dst_addr,
+                                   protocol, data, data_size);
+	if (!ipv4_dtg)
+		return -1;
+
+	ret = ether_dev_send(dev, dst_hwaddr, ETHER_TYPE_IPV4,
+                         ipv4_get_datagram(ipv4_dtg),
+						 ipv4_get_datagram_size(ipv4_dtg));
+
+	ipv4_datagram_free(ipv4_dtg);
+
+	return ret;
 }
