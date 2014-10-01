@@ -109,7 +109,7 @@ uint32_t xinet_aton(const char *addr_str)
 
 void dump_data(FILE *stream, const uint8_t *data, size_t len)
 {
-	size_t i, cnt;
+	size_t i, cnt = 0;
 
 	for (i = 0; i < len; i++) {
 		fprintf(stream, "%x ", data[i]);
