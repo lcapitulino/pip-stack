@@ -298,21 +298,14 @@ static int uping_send_icmp_echo_request(struct ether_device *dev,
 										uint32_t ipv4_dst_addr,
 										uint8_t *dst_hwaddr, uint16_t id)
 {
-	struct ipv4_datagram *ipv4_dtg;
 	uint8_t icmp_req[64];
 	int ret;
 
 	uping_build_icmp_echo_request(icmp_req, sizeof(icmp_req), getpid(), id);
 
-	ipv4_dtg = ipv4_build_datagram(ipv4_mod->ipv4_addr, ipv4_dst_addr,
-                                   IPV4_PROT_ICMP, icmp_req, sizeof(icmp_req));
-	if (!ipv4_dtg)
-		return -1;
+	ret = ipv4_send(dev, ipv4_mod, ipv4_dst_addr, dst_hwaddr, IPV4_PROT_ICMP,
+                    icmp_req, sizeof(icmp_req));
 
-	ret = ether_dev_send(dev, dst_hwaddr, ETHER_TYPE_IPV4,
-                         ipv4_dtg->buf, ipv4_dtg->data_size + IPV4_HEADER_SIZE);
-
-	ipv4_datagram_free(ipv4_dtg);
 	return ret;
 }
 
