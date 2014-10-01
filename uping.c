@@ -355,12 +355,15 @@ static int uping_recv_icmp_echo_reply(struct ether_device *dev,
                                       struct uping_info *info)
 {
 	struct ether_dispatch dispatch;
+	int err;
 
 	memset(&dispatch, 0, sizeof(dispatch));
 	dispatch.handler_ipv4 = uping_handle_icmp;
 	dispatch.data = info;
 
-	return ether_dev_recv_dispatch(dev, &dispatch, 2);
+	err = ether_dev_recv_dispatch(dev, &dispatch, 2);
+	errno = dispatch.err_num;
+	return err;
 }
 
 int main(int argc, char *argv[])
@@ -386,6 +389,11 @@ int main(int argc, char *argv[])
 	uping_stack_init(&uping_cfg, &uping_stack);
 	ipv4_addr_ping = inet_network(uping_cfg.ipv4_addr_ping_str);
 
+	/*
+	 * XXX: Without this sending a packet through the tap interface
+	 * fails. It seems that the tap interface needs some time to
+	 * detect an application has opened it.
+	 */
 	sleep(1);
 
 	/* TODO: add assessors for these objects */
@@ -428,10 +436,10 @@ int main(int argc, char *argv[])
 				(int) info.datagram_size, uping_cfg.ipv4_addr_ping_str,
 				seq, info.ttl, (float) time_diff_now(info.time) * 0.001);
 		} else {
-			fprintf(stderr, "failed getting icmp response\n");
+			perror("failed getting icmp response");
 		}
 
-		if (seq == SHRT_MAX)
+		if (seq == USHRT_MAX)
 			seq = 1;
 
 		sleep(1);
