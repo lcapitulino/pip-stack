@@ -67,10 +67,9 @@ static void uarp_print_errno(const char *msg)
 static void uarp_shell_whois(struct uarp_protocol_stack *stack,
                              const char *cmd)
 {
-	struct arp_packet *arp_pkt;
-	struct ether_frame *frame;
 	const char *ipv4_addr_str;
 	char hwaddr_str[24];
+	uint8_t hwaddr[6];
 	in_addr_t addr;
 	int err;
 
@@ -86,68 +85,14 @@ static void uarp_shell_whois(struct uarp_protocol_stack *stack,
 		return;
 	}
 
-	arp_pkt = arp_build_request(stack->dev->hwaddr, stack->ipv4->ipv4_addr,
-								ETHER_TYPE_IPV4, addr);
-	if (!arp_pkt) {
+	err = arp_find_hwaddr(stack->dev, stack->ipv4->ipv4_addr, addr, hwaddr);
+	if (err < 0) {
 		uarp_print_errno("failed to build ARP request");
 		return;
 	}
 
-	err = ether_dev_send_bcast(stack->dev, ETHER_TYPE_ARP,
-							   arp_pkt->buf, ARP_PACKET_SIZE);
-	if (err < 0) {
-		uarp_print_errno("failed to send ARP request");
-		arp_packet_free(arp_pkt);
-		return;
-	}
-
-	while (!uarp_interrupted) {
-		arp_packet_free(arp_pkt);
-
-		frame = ether_dev_recv(stack->dev);
-		if (uarp_interrupted) {
-			ether_frame_free(frame);
-			putchar('\n');
-			break;
-		}
-
-		if (!frame) {
-			uarp_print_errno("can't receive frame");
-			return;
-		}
-
-		if (ether_get_type(frame) != ETHER_TYPE_ARP) {
-			ether_frame_free(frame);
-			arp_pkt = NULL;
-			continue;
-		}
-
-		arp_pkt = arp_packet_from_data(ether_get_data(frame),
-                                       ether_get_data_size(frame));
-		if (!arp_pkt) {
-			uarp_print_errno("failed to get ARP packet");
-			ether_frame_free(frame);
-			return;
-		}
-
-		ether_frame_free(frame);
-
-		if (!arp_packet_is_good(arp_pkt))
-			continue;
-
-		if (arp_get_oper(arp_pkt) != ARP_OP_REP)
-			continue;
-
-		if (arp_get_spa(arp_pkt) != addr)
-			continue;
-
-		ether_addr_to_str(arp_get_sha(arp_pkt), hwaddr_str, sizeof(hwaddr_str));
-		printf("%s is %s\n", ipv4_addr_str, hwaddr_str);
-		arp_packet_free(arp_pkt);
-		break;
-	}
-
-	uarp_interrupted = 0;
+	ether_addr_to_str(hwaddr, hwaddr_str, sizeof(hwaddr_str));
+	printf("%s is at %s\n", ipv4_addr_str, hwaddr_str);
 }
 
 static void uarp_shell_reply(struct uarp_protocol_stack *stack,
