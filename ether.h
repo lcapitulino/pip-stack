@@ -51,6 +51,21 @@ struct ether_frame {
 	uint8_t buf[ETHER_FRAME_SIZE];
 };
 
+typedef int (*ether_frame_handler_t)(struct ether_frame *frame, void *data);
+
+#define ETHER_DISP_CONT 0
+#define ETHER_DISP_QUIT 1
+#define ETHER_DISP_ERR  2
+
+struct ether_dispatch {
+	ether_frame_handler_t handler_ipv4;
+	ether_frame_handler_t handler_arp;
+	ether_frame_handler_t handler_unk;
+	bool refuse_broadcast;
+	void *data;
+	int err_num;
+};
+
 struct ether_device *ether_dev_alloc(const uint8_t *hwaddr);
 void ether_dev_put(struct ether_device *dev);
 void ether_dev_get(struct ether_device *dev);
@@ -75,6 +90,10 @@ void ether_addr_to_str(const uint8_t *hwaddr, char *str, size_t len);
 int ether_str_to_addr(const char *hwaddr_str, uint8_t *hwaddr);
 void ether_dump_frame(FILE *stream, const struct ether_frame *frame);
 
+int ether_dev_recv_dispatch(struct ether_device *dev,
+                            struct ether_dispatch *cfg,
+							int sec_timeout);
+
 static inline void hwaddr_init(uint8_t *hwaddr, int c)
 {
 	memset(hwaddr, c, 6);
@@ -88,6 +107,14 @@ static inline void hwaddr_cp(uint8_t *dest, const uint8_t *src)
 static inline bool hwaddr_eq(const uint8_t *dest, const uint8_t *src)
 {
 	return memcmp(dest, src, 6) == 0;
+}
+
+static inline bool hwaddr_is_bcast(const uint8_t *hwaddr)
+{
+	uint8_t bcast[6];
+
+	hwaddr_init(bcast, 0xf);
+	return hwaddr_eq(hwaddr, bcast);
 }
 
 #endif /* ETHER_H */

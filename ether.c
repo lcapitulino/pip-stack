@@ -19,6 +19,7 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 
 #include <linux/if.h>
 #include <linux/if_tun.h>
@@ -127,6 +128,78 @@ struct ether_frame *ether_dev_recv(struct ether_device *dev)
 	frame->data_size = ret - ETHER_HEADER_SIZE;
 
 	return frame;
+}
+
+int ether_dev_recv_dispatch(struct ether_device *dev,
+                            struct ether_dispatch *cfg,
+							int sec_timeout)
+{
+	struct ether_frame *frame;
+	struct timeval tv;
+	const uint8_t *p;
+	fd_set rfds;
+	int ret;
+
+	memset(&tv, 0, sizeof(tv));
+	tv.tv_sec = sec_timeout;
+
+	while (true) {
+		FD_ZERO(&rfds);
+		FD_SET(dev->fd, &rfds);
+
+		ret = select(dev->fd + 1, &rfds, NULL, NULL, &tv);
+		if (ret < 0) {
+			cfg->err_num = errno;
+			return -1;
+		}
+
+		if (!FD_ISSET(dev->fd, &rfds))
+			return -2;
+
+		frame = ether_dev_recv(dev);
+		if (!frame) {
+			cfg->err_num = errno;
+			return -1;
+		}
+
+		p = ether_get_dst(frame);
+		if (!hwaddr_is_bcast(p) && !hwaddr_eq(p, dev->hwaddr))
+			continue;
+		if (hwaddr_is_bcast(p) && cfg->refuse_broadcast)
+			continue;
+
+		switch (ether_get_type(frame)) {
+		case ETHER_TYPE_IPV4:
+			if (cfg->handler_ipv4)
+				ret = cfg->handler_ipv4(frame, cfg->data);
+			break;
+		case ETHER_TYPE_ARP:
+			if (cfg->handler_arp)
+				ret = cfg->handler_arp(frame, cfg->data);
+			break;
+		default:
+			if (cfg->handler_unk)
+				ret = cfg->handler_unk(frame, cfg->data);
+			break;
+		}
+
+		if (ret == ETHER_DISP_QUIT) {
+			ret = 0;
+			break;
+		}
+
+		if (ret == ETHER_DISP_ERR) {
+			cfg->err_num = errno;
+			ret = -1;
+			break;
+		}
+
+		/* continue */
+		ether_frame_free(frame);
+	}
+
+	ether_frame_free(frame);
+	return ret;
 }
 
 int ether_dev_send(struct ether_device *dev, const uint8_t *dest_hwaddr,
