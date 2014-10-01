@@ -9,6 +9,8 @@ CC := gcc
 CFLAGS := -Wall -ggdb -O0
 BIN := uarp udump uping
 TESTS := check-utils check-ether check-arp check-ipv4
+MODULES_OBJS := utils.o ether.o arp.o ipv4.o udp.o
+LIBS := -lefence -lconfig
 
 all: $(BIN)
 
@@ -30,19 +32,19 @@ ether.o: ether.c ether.h common.h utils.h
 uarp.o: uarp.c common.h ether.h arp.h utils.h ipv4.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-uarp: uarp.o ether.o utils.o arp.o ipv4.o -lefence -lreadline -lconfig
+uarp: uarp.o $(MODULES_OBJS) $(LIBS) -lreadline
 	$(QUIET_LK)$(CC) -o $@ $+
 
 uping.o: uping.c common.h ether.h arp.h utils.h ipv4.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-uping: uping.o ether.o utils.o arp.o ipv4.o -lefence -lreadline -lconfig
+uping: uping.o $(MODULES_OBJS) $(LIBS)
 	$(QUIET_LK)$(CC) -o $@ $+
 
 udump.o: udump.c common.h ether.h arp.h udp.h utils.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-udump: udump.o ether.o utils.o arp.o ipv4.o udp.o -lefence
+udump: udump.o $(MODULES_OBJS) $(LIBS)
 	$(QUIET_LK)$(CC) -o $@ $+
 
 ###
