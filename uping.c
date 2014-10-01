@@ -304,8 +304,8 @@ static int uping_send_icmp_echo_request(struct ether_device *dev,
 
 	uping_build_icmp_echo_request(icmp_req, sizeof(icmp_req), getpid(), id);
 
-	ipv4_dtg = ipv4_build_datagram(ipv4_mod->ipv4_addr, ipv4_dst_addr, 1,
-                                   icmp_req, sizeof(icmp_req));
+	ipv4_dtg = ipv4_build_datagram(ipv4_mod->ipv4_addr, ipv4_dst_addr,
+                                   IPV4_PROT_ICMP, icmp_req, sizeof(icmp_req));
 	if (!ipv4_dtg)
 		return -1;
 
@@ -352,7 +352,7 @@ static int uping_recv_icmp_echo_reply(struct ether_device *dev,
 
 		ether_frame_free(frame);
 
-		if (ipv4_get_protocol(ipv4_dtg) != 1) {
+		if (ipv4_get_protocol(ipv4_dtg) != IPV4_PROT_ICMP) {
 			ipv4_datagram_free(ipv4_dtg);
 			continue;
 		}

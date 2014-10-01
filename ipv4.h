@@ -23,6 +23,7 @@
 #define IPV4_HEADER_SIZE 20
 
 /* Supported protocols */
+#define IPV4_PROT_ICMP 1
 #define IPV4_PROT_UDP 17
 
 /* Flags */
