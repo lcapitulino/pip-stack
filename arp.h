@@ -66,4 +66,7 @@ uint32_t arp_get_tpa(const struct arp_packet *arp_pkt);
 
 void arp_dump_packet(FILE *stream, const struct arp_packet *arp_pkt);
 
+int arp_find_hwaddr(struct ether_device *dev, uint32_t ipv4_src_addr,
+                    uint32_t ipv4_dst_addr, uint8_t *hwaddr);
+
 #endif /* ARP_H */

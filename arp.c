@@ -211,3 +211,74 @@ void arp_dump_packet(FILE *stream, const struct arp_packet *arp_pkt)
 
 	fprintf(stream, "\n");
 }
+
+struct arp_handler_data {
+	uint32_t ipv4_dst_addr;
+	uint8_t *hwaddr;
+};
+
+static int uping_handle_arp(struct ether_frame *frame, void *data)
+{
+	struct arp_handler_data *p = data;
+	struct arp_packet *arp_pkt;
+	int ret;
+
+	arp_pkt = arp_packet_from_data(ether_get_data(frame),
+	                               ether_get_data_size(frame));
+	if (!arp_pkt)
+		return ETHER_DISP_ERR;
+
+	ret = ETHER_DISP_CONT;
+
+	if (!arp_packet_is_good(arp_pkt))
+		goto out;
+
+	if (arp_get_oper(arp_pkt) != ARP_OP_REP)
+		goto out;
+
+	if (arp_get_spa(arp_pkt) != p->ipv4_dst_addr)
+		goto out;
+
+	hwaddr_cp(p->hwaddr, arp_get_sha(arp_pkt));
+	ret = ETHER_DISP_QUIT;
+
+out:
+	arp_packet_free(arp_pkt);
+	return ret;
+}
+
+int arp_find_hwaddr(struct ether_device *dev, uint32_t ipv4_src_addr,
+                    uint32_t ipv4_dst_addr, uint8_t *hwaddr)
+{
+	struct ether_dispatch dispatch;
+	struct arp_handler_data data;
+	struct arp_packet *arp_req;
+	int err;
+
+	hwaddr_init(hwaddr, 0);
+
+	arp_req = arp_build_request(dev->hwaddr, ipv4_src_addr, ETHER_TYPE_IPV4,
+                                ipv4_dst_addr);
+	if (!arp_req)
+		return -1;
+
+	err = ether_dev_send_bcast(dev, ETHER_TYPE_ARP, arp_req->buf,
+                               ARP_PACKET_SIZE);
+	if (err < 0) {
+		err = errno;
+		arp_packet_free(arp_req);
+		errno = err;
+		return -1;
+	}
+
+	data.ipv4_dst_addr = ipv4_dst_addr;
+	data.hwaddr = hwaddr;
+
+	memset(&dispatch, 0, sizeof(dispatch));
+	dispatch.handler_arp = uping_handle_arp;
+	dispatch.data = &data;
+
+	err = ether_dev_recv_dispatch(dev, &dispatch, 6);
+	errno = dispatch.err_num;
+	return err;
+}

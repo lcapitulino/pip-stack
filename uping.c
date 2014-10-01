@@ -23,6 +23,8 @@
 #include "arp.h"
 #include "ipv4.h"
 
+#define ICMP_PKT_SIZE 64
+
 struct uping_config {
 	char *ipv4_addr_ping_str;
 	bool verbose;
@@ -176,81 +178,6 @@ static void uping_config_destroy(struct uping_config *uping_cfg)
 	free(uping_cfg->hwaddr_host_str);
 }
 
-struct uping_arp_data {
-	uint32_t ipv4_dst_addr;
-	uint8_t *hwaddr;
-};
-
-static int uping_handle_arp(struct ether_frame *frame, void *data)
-{
-	struct uping_arp_data *p = data;
-	struct arp_packet *arp_pkt;
-	int ret;
-
-	arp_pkt = arp_packet_from_data(ether_get_data(frame),
-	                               ether_get_data_size(frame));
-	if (!arp_pkt)
-		return ETHER_DISP_ERR;
-
-	ret = ETHER_DISP_CONT;
-
-	if (!arp_packet_is_good(arp_pkt))
-		goto out;
-
-	if (arp_get_oper(arp_pkt) != ARP_OP_REP)
-		goto out;
-
-	if (arp_get_spa(arp_pkt) != p->ipv4_dst_addr)
-		goto out;
-
-	hwaddr_cp(p->hwaddr, arp_get_sha(arp_pkt));
-	ret = ETHER_DISP_QUIT;
-
-out:
-	arp_packet_free(arp_pkt);
-	return ret;
-}
-
-/*
- * TODO: move this to the arp module, but we also need a function
- * in the ether module capable of dispatching packets to callbacks.
- */
-static int arp_find_hwaddr(struct ether_device *dev, uint32_t ipv4_src_addr,
-                           uint32_t ipv4_dst_addr, uint8_t *hwaddr)
-{
-	struct ether_dispatch dispatch;
-	struct uping_arp_data data;
-	struct arp_packet *arp_req;
-	int err;
-
-	hwaddr_init(hwaddr, 0);
-
-	arp_req = arp_build_request(dev->hwaddr, ipv4_src_addr, ETHER_TYPE_IPV4,
-                                ipv4_dst_addr);
-	if (!arp_req)
-		return -1;
-
-	err = ether_dev_send_bcast(dev, ETHER_TYPE_ARP, arp_req->buf,
-                               ARP_PACKET_SIZE);
-	if (err < 0) {
-		err = errno;
-		arp_packet_free(arp_req);
-		errno = err;
-		return -1;
-	}
-
-	data.ipv4_dst_addr = ipv4_dst_addr;
-	data.hwaddr = hwaddr;
-
-	memset(&dispatch, 0, sizeof(dispatch));
-	dispatch.handler_arp = uping_handle_arp;
-	dispatch.data = &data;
-
-	err = ether_dev_recv_dispatch(dev, &dispatch, 6);
-	errno = dispatch.err_num;
-	return err;
-}
-
 static suseconds_t get_time(void)
 {
 	struct timeval tv;
@@ -304,7 +231,7 @@ static int uping_send_icmp_echo_request(struct ether_device *dev,
 										uint32_t ipv4_dst_addr,
 										uint8_t *dst_hwaddr, uint16_t id)
 {
-	uint8_t icmp_req[64];
+	uint8_t icmp_req[ICMP_PKT_SIZE];
 	int ret;
 
 	uping_build_icmp_echo_request(icmp_req, sizeof(icmp_req), getpid(), id);
@@ -415,8 +342,9 @@ int main(int argc, char *argv[])
 		printf("%s is %s\n", uping_cfg.ipv4_addr_ping_str, str);
 	}
 
-	fprintf(stderr, "PING %s (%s)\n", uping_cfg.ipv4_addr_ping_str,
-            uping_cfg.ipv4_addr_ping_str);
+	fprintf(stderr, "PING %s (%s) %d bytes of data\n",
+	        uping_cfg.ipv4_addr_ping_str,
+            uping_cfg.ipv4_addr_ping_str, ICMP_PKT_SIZE);
 
 	for (seq = 1; ; seq++) {
 		ret = uping_send_icmp_echo_request(uping_stack.dev,
