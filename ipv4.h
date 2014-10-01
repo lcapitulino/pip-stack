@@ -39,6 +39,12 @@ struct ipv4_module {
 	uint32_t ipv4_addr;
 };
 
+struct ipv4_stack_config {
+	char *ifname;
+	uint32_t ipv4_host_addr;
+	uint8_t hwaddr[6];
+};
+
 struct ipv4_datagram {
 	uint8_t *version_ihl;
 	uint8_t *ds_ecn;
@@ -92,5 +98,8 @@ int ipv4_send(struct ether_device *dev, struct ipv4_module *ipv4_mod,
 
 struct ipv4_module *ipv4_module_alloc(uint32_t ipv4_host_addr);
 void ipv4_module_free(struct ipv4_module *ipv4_mod);
+
+void ipv4_read_stack_config(const char *config_file_path,
+                            struct ipv4_stack_config *stack_cfg);
 
 #endif /* IPV4_H */

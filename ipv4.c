@@ -14,10 +14,60 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <libconfig.h>
+
 #include "common.h"
 #include "utils.h"
 #include "ipv4.h"
 #include "ether.h"
+
+static void xconfig_lookup_string(config_t *cfg,
+                                  const char *key, const char **str,
+								  const char *config_file_path)
+{
+	int ret;
+
+	ret = config_lookup_string(cfg, key, str);
+	if (!ret) {
+		fprintf(stderr, "ERROR: could not locate '%s' in '%s'\n",
+                        key, config_file_path);
+		exit(1);
+	}
+}
+
+void ipv4_read_stack_config(const char *config_file_path,
+                            struct ipv4_stack_config *stack_cfg)
+{
+	const char *str;
+	config_t cfg;
+	int ret;
+
+	config_init(&cfg);
+
+	ret = config_read_file(&cfg, config_file_path);
+	if (!ret) {
+		fprintf(stderr, "%s:%d - %s\n",
+                        config_error_file(&cfg),
+						config_error_line(&cfg),
+						config_error_text(&cfg));
+		exit(1);
+	}
+
+	xconfig_lookup_string(&cfg, "iface", &str, config_file_path);
+	stack_cfg->ifname = xstrdup(str);
+
+	xconfig_lookup_string(&cfg, "ipv4_addr", &str, config_file_path);
+	stack_cfg->ipv4_host_addr = inet_network(str);
+
+	xconfig_lookup_string(&cfg, "hwaddr", &str, config_file_path);
+	ret = ether_str_to_addr(str, stack_cfg->hwaddr);
+	if (ret < 0) {
+		fprintf(stderr, "bad hardware address: %s\n", str);
+		exit(1);
+	}
+
+	config_destroy(&cfg);
+}
 
 struct ipv4_module *ipv4_module_alloc(uint32_t ipv4_host_addr)
 {
