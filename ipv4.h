@@ -83,6 +83,7 @@ uint8_t *ipv4_get_data(const struct ipv4_datagram *ipv4_dtg);
 bool ipv4_checksum_ok(const struct ipv4_datagram *ipv4_dtg);
 uint8_t *ipv4_get_datagram(const struct ipv4_datagram *ipv4_dtg);
 uint16_t ipv4_get_datagram_size(const struct ipv4_datagram *ipv4_dtg);
+bool ipv4_datagram_is_good(const struct ipv4_datagram *ipv4_dtg);
 void ipv4_dump_datagram(FILE *stream, const struct ipv4_datagram *ipv4_dtg);
 
 int ipv4_send(struct ether_device *dev, struct ipv4_module *ipv4_mod,

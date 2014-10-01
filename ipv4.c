@@ -245,6 +245,26 @@ bool ipv4_checksum_ok(const struct ipv4_datagram *ipv4_dtg)
 	return calculate_net_checksum(ipv4_dtg->buf, 20) == 0;
 }
 
+bool ipv4_datagram_is_good(const struct ipv4_datagram *ipv4_dtg)
+{
+	if (ipv4_get_version(ipv4_dtg) != 4)
+		return false;
+
+	if (ipv4_get_ihl(ipv4_dtg) != 5)
+		return false;
+
+	if (ipv4_get_length(ipv4_dtg) < 20)
+		return false;
+
+	if (ipv4_get_flags(ipv4_dtg) & IPV4_FLAGS_MF)
+		return false;
+
+	if (ipv4_get_fragoffset(ipv4_dtg) != 0)
+		return false;
+
+	return ipv4_checksum_ok(ipv4_dtg);
+}
+
 void ipv4_dump_datagram(FILE *stream, const struct ipv4_datagram *ipv4_dtg)
 {
 	char str[16];
