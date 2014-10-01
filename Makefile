@@ -72,7 +72,7 @@ check-arp: check-arp.o arp.o ether.o utils.o -lcheck -lefence
 check-ipv4.o: check-ipv4.c ipv4.h ether.h common.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-check-ipv4: check-ipv4.o ipv4.o ether.o utils.o -lcheck -lefence
+check-ipv4: check-ipv4.o ipv4.o ether.o utils.o $(LIBS) -lcheck
 	$(QUIET_LK)$(CC) -o $@ $+
 
 check: $(TESTS)
