@@ -42,6 +42,8 @@ struct uping_info {
 	size_t datagram_size;
 	int ttl;
 	suseconds_t time;
+	uint16_t id;
+	uint16_t seq;
 };
 
 static bool verbose_on(const struct uping_config *uping_cfg)
@@ -174,6 +176,41 @@ static void uping_config_destroy(struct uping_config *uping_cfg)
 	free(uping_cfg->hwaddr_host_str);
 }
 
+struct uping_arp_data {
+	uint32_t ipv4_dst_addr;
+	uint8_t *hwaddr;
+};
+
+static int uping_handle_arp(struct ether_frame *frame, void *data)
+{
+	struct uping_arp_data *p = data;
+	struct arp_packet *arp_pkt;
+	int ret;
+
+	arp_pkt = arp_packet_from_data(ether_get_data(frame),
+	                               ether_get_data_size(frame));
+	if (!arp_pkt)
+		return ETHER_DISP_ERR;
+
+	ret = ETHER_DISP_CONT;
+
+	if (!arp_packet_is_good(arp_pkt))
+		goto out;
+
+	if (arp_get_oper(arp_pkt) != ARP_OP_REP)
+		goto out;
+
+	if (arp_get_spa(arp_pkt) != p->ipv4_dst_addr)
+		goto out;
+
+	hwaddr_cp(p->hwaddr, arp_get_sha(arp_pkt));
+	ret = ETHER_DISP_QUIT;
+
+out:
+	arp_packet_free(arp_pkt);
+	return ret;
+}
+
 /*
  * TODO: move this to the arp module, but we also need a function
  * in the ether module capable of dispatching packets to callbacks.
@@ -181,68 +218,37 @@ static void uping_config_destroy(struct uping_config *uping_cfg)
 static int arp_find_hwaddr(struct ether_device *dev, uint32_t ipv4_src_addr,
                            uint32_t ipv4_dst_addr, uint8_t *hwaddr)
 {
-	struct arp_packet *arp_pkt;
-	struct ether_frame *frame;
+	struct ether_dispatch dispatch;
+	struct uping_arp_data data;
+	struct arp_packet *arp_req;
 	int err;
 
 	hwaddr_init(hwaddr, 0);
 
-	arp_pkt = arp_build_request(dev->hwaddr, ipv4_src_addr, ETHER_TYPE_IPV4,
+	arp_req = arp_build_request(dev->hwaddr, ipv4_src_addr, ETHER_TYPE_IPV4,
                                 ipv4_dst_addr);
-	if (!arp_pkt)
+	if (!arp_req)
 		return -1;
 
-	err = ether_dev_send_bcast(dev, ETHER_TYPE_ARP, arp_pkt->buf,
+	err = ether_dev_send_bcast(dev, ETHER_TYPE_ARP, arp_req->buf,
                                ARP_PACKET_SIZE);
 	if (err < 0) {
 		err = errno;
-		arp_packet_free(arp_pkt);
+		arp_packet_free(arp_req);
 		errno = err;
 		return -1;
 	}
 
-	while (true) {
-		arp_packet_free(arp_pkt);
+	data.ipv4_dst_addr = ipv4_dst_addr;
+	data.hwaddr = hwaddr;
 
-		/* TODO: ether_dev_recv() should have a timeout option */
-		frame = ether_dev_recv(dev);
-		if (!frame)
-			return -1;
+	memset(&dispatch, 0, sizeof(dispatch));
+	dispatch.handler_arp = uping_handle_arp;
+	dispatch.data = &data;
 
-		if (ether_get_type(frame) != ETHER_TYPE_ARP) {
-			ether_frame_free(frame);
-			arp_pkt = NULL;
-			continue;
-		}
-
-		arp_pkt = arp_packet_from_data(ether_get_data(frame),
-		                               ether_get_data_size(frame));
-		if (!arp_pkt) {
-			err = errno;
-			ether_frame_free(frame);
-			errno = err;
-			return -1;
-		}
-
-		ether_frame_free(frame);
-
-		if (!arp_packet_is_good(arp_pkt))
-			continue;
-
-		if (arp_get_oper(arp_pkt) != ARP_OP_REP)
-			continue;
-
-		if (arp_get_spa(arp_pkt) != ipv4_dst_addr)
-			continue;
-
-		hwaddr_cp(hwaddr, arp_get_sha(arp_pkt));
-		arp_packet_free(arp_pkt);
-
-		return 0;
-	}
-
-	/* impossible */
-	return -1;
+	err = ether_dev_recv_dispatch(dev, &dispatch, 6);
+	errno = dispatch.err_num;
+	return err;
 }
 
 static suseconds_t get_time(void)
@@ -309,64 +315,50 @@ static int uping_send_icmp_echo_request(struct ether_device *dev,
 	return ret;
 }
 
-static int uping_recv_icmp_echo_reply(struct ether_device *dev,
-                                      uint16_t id, uint16_t seq,
-                                      struct uping_info *info)
+static int uping_handle_icmp(struct ether_frame *frame, void *data)
 {
+	struct uping_info *info = data;
 	struct ipv4_datagram *ipv4_dtg;
-	struct ether_frame *frame;
+	int ret = ETHER_DISP_CONT;
 	uint16_t *idp, *seqp;
-	uint8_t *data;
+	const uint8_t *p;
 
-	memset(info, 0, sizeof(*info));
+	ipv4_dtg = ipv4_datagram_from_data(ether_get_data(frame),
+                                       ether_get_data_size(frame));
+	if (!ipv4_dtg)
+		return ETHER_DISP_ERR;
 
-	while (true) {
-		/* TODO: ether_dev_recv() should have a timeout option */
-		frame = ether_dev_recv(dev);
-		if (!frame)
-			return -1;
+	if (ipv4_get_protocol(ipv4_dtg) != IPV4_PROT_ICMP)
+		goto out;
 
-		if (ether_get_type(frame) != ETHER_TYPE_IPV4) {
-			ether_frame_free(frame);
-			continue;
-		}
+	/* TODO: Check all other fields (version, ihl, checksum, etc) */
+	p = ipv4_get_data(ipv4_dtg);
+	assert(p != NULL);
 
-		if (!hwaddr_eq(ether_get_dst(frame), dev->hwaddr)) {
-			ether_frame_free(frame);
-			continue;
-		}
-
-		ipv4_dtg = ipv4_datagram_from_data(ether_get_data(frame),
-                                           ether_get_data_size(frame));
-		if (!ipv4_dtg) {
-			ether_frame_free(frame);
-			continue;
-		}
-
-		ether_frame_free(frame);
-
-		if (ipv4_get_protocol(ipv4_dtg) != IPV4_PROT_ICMP) {
-			ipv4_datagram_free(ipv4_dtg);
-			continue;
-		}
-
-		/* Check all other fields (version, ihl, checksum, etc) */
-		data = ipv4_get_data(ipv4_dtg);
-		assert(data != NULL);
-
-		idp = (uint16_t *) &data[4];
-		seqp = (uint16_t *) &data[6];
-		if (ntohs(*idp) == id && ntohs(*seqp) == seq) {
-			info->ttl = ipv4_get_ttl(ipv4_dtg);
-			info->datagram_size = ipv4_get_data_size(ipv4_dtg);
-			memcpy(&info->time, &data[8], sizeof(info->time));
-			ipv4_datagram_free(ipv4_dtg);
-			return 0;
-		}
+	idp = (uint16_t *) &p[4];
+	seqp = (uint16_t *) &p[6];
+	if (ntohs(*idp) == info->id && ntohs(*seqp) == info->seq) {
+		info->ttl = ipv4_get_ttl(ipv4_dtg);
+		info->datagram_size = ipv4_get_data_size(ipv4_dtg);
+		memcpy(&info->time, &p[8], sizeof(info->time));
+		ret = ETHER_DISP_QUIT;
 	}
 
-	/* impossible */
-	return -1;
+out:
+	ipv4_datagram_free(ipv4_dtg);
+	return ret;
+}
+
+static int uping_recv_icmp_echo_reply(struct ether_device *dev,
+                                      struct uping_info *info)
+{
+	struct ether_dispatch dispatch;
+
+	memset(&dispatch, 0, sizeof(dispatch));
+	dispatch.handler_ipv4 = uping_handle_icmp;
+	dispatch.data = info;
+
+	return ether_dev_recv_dispatch(dev, &dispatch, 2);
 }
 
 int main(int argc, char *argv[])
@@ -398,7 +390,12 @@ int main(int argc, char *argv[])
 	ret = arp_find_hwaddr(uping_stack.dev, uping_stack.ipv4_mod->ipv4_addr,
                           ipv4_addr_ping, hwaddr);
 	if (ret < 0) {
-		perror("arp_find_hwaddr()");
+		if (ret == -2) {
+			fprintf(stderr, "no echo reply from %s\n",
+                          uping_cfg.ipv4_addr_ping_str);
+		} else {
+			perror("arp_find_hwaddr()");
+		}
 		exit(1);
 	}
 
@@ -420,8 +417,9 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 
-		ret = uping_recv_icmp_echo_reply(uping_stack.dev,
-    	                                 getpid(), seq, &info);
+		info.id = getpid();
+		info.seq = seq;
+		ret = uping_recv_icmp_echo_reply(uping_stack.dev, &info);
 		if (!ret) {
 			fprintf(stderr,
 				"%d bytes from %s: icmp_seq=%d ttl=%d time=%1.3f ms\n",
