@@ -14,7 +14,6 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include <libconfig.h>
 #include <sys/time.h>
 
 #include "common.h"
@@ -24,16 +23,6 @@
 #include "ipv4.h"
 
 #define ICMP_PKT_SIZE 64
-
-struct uping_config {
-	char *ipv4_addr_ping_str;
-	bool verbose;
-
-	/* ipv4 stack config */
-	char *iface;
-	char *ipv4_addr_host_str;
-	char *hwaddr_host_str;
-};
 
 struct uping_stack {
 	struct ether_device *dev;
@@ -47,138 +36,6 @@ struct uping_info {
 	uint16_t id;
 	uint16_t seq;
 };
-
-static bool verbose_on(const struct uping_config *uping_cfg)
-{
-	return uping_cfg->verbose;
-}
-
-static void xconfig_lookup_string(config_t *cfg,
-                                  const char *key, const char **str,
-								  const char *config_file_path)
-{
-	int ret;
-
-	ret = config_lookup_string(cfg, key, str);
-	if (!ret) {
-		fprintf(stderr, "ERROR: could not locate '%s' in '%s'\n",
-                        "iface", config_file_path);
-		exit(1);
-	}
-}
-
-static void read_ipv4_config(const char *config_file_path,
-                             struct uping_config *uping_cfg)
-{
-	const char *str;
-	config_t cfg;
-	int ret;
-
-	config_init(&cfg);
-
-	ret = config_read_file(&cfg, config_file_path);
-	if (!ret) {
-		fprintf(stderr, "%s:%d - %s\n",
-                        config_error_file(&cfg),
-						config_error_line(&cfg),
-						config_error_text(&cfg));
-		exit(1);
-	}
-
-	xconfig_lookup_string(&cfg, "iface", &str, config_file_path);
-	uping_cfg->iface = xstrdup(str);
-
-	xconfig_lookup_string(&cfg, "ipv4_addr", &str, config_file_path);
-	uping_cfg->ipv4_addr_host_str = xstrdup(str);
-
-	xconfig_lookup_string(&cfg, "hwaddr", &str, config_file_path);
-	uping_cfg->hwaddr_host_str = xstrdup(str);
-
-	config_destroy(&cfg);
-}
-
-static void usage(void)
-{
-	printf("uping <-c file> [-v] ipv4-address\n");
-}
-
-static void uping_config_init(int argc, char *argv[],
-                              struct uping_config *uping_cfg)
-{
-	const char *config_file = NULL;
-	int opt;
-
-	memset(uping_cfg, 0, sizeof(*uping_cfg));
-
-	/* parse command line options */
-	while ((opt = getopt(argc, argv, "c:v")) != -1) {
-		switch (opt) {
-		case 'c':
-			config_file = optarg;
-			break;
-		case 'v':
-			uping_cfg->verbose = true;
-			break;
-		case 'h':
-		default:
-			usage();
-			exit(1);
-		}
-	}
-
-	die_if_not_passed("-c", config_file);
-
-	if ((optind + 1) != argc) {
-		usage();
-		exit(1);
-	}
-
-	uping_cfg->ipv4_addr_ping_str = argv[optind];
-
-	/* read config file */
-	read_ipv4_config(config_file, uping_cfg);
-}
-
-static void uping_stack_init(const struct uping_config *uping_cfg,
-                             struct uping_stack *uping_stack)
-{
-	uint8_t hwaddr[6];
-	uint32_t addr;
-	int ret;
-
-	ret = ether_str_to_addr(uping_cfg->hwaddr_host_str, hwaddr);
-	if (ret < 0) {
-		fprintf(stderr, "ERROR: bad hardware address: %s\n",
-		                uping_cfg->hwaddr_host_str);
-		exit(1);
-	}
-
-	uping_stack->dev = ether_dev_alloc(hwaddr);
-	if (!uping_stack->dev) {
-		perror("ether_dev_alloc()");
-		exit(1);
-	}
-
-	ret = ether_dev_open(uping_stack->dev, uping_cfg->iface);
-	if (ret < 0) {
-		perror("ether_dev_open()");
-		exit(1);
-	}
-
-	addr = inet_network(uping_cfg->ipv4_addr_host_str);
-	uping_stack->ipv4_mod = ipv4_module_alloc(addr);
-	if (!uping_stack->ipv4_mod) {
-		perror("ipv4_module_alloc()");
-		exit(1);
-	}
-}
-
-static void uping_config_destroy(struct uping_config *uping_cfg)
-{
-	free(uping_cfg->iface);
-	free(uping_cfg->ipv4_addr_host_str);
-	free(uping_cfg->hwaddr_host_str);
-}
 
 static suseconds_t get_time(void)
 {
@@ -231,12 +88,13 @@ static void uping_build_icmp_echo_request(uint8_t *buf, size_t len,
 static int uping_send_icmp_echo_request(struct ether_device *dev,
                                         struct ipv4_module *ipv4_mod,
 										uint32_t ipv4_dst_addr,
-										uint8_t *dst_hwaddr, uint16_t id)
+										uint8_t *dst_hwaddr,
+										uint16_t id, uint16_t seq)
 {
 	uint8_t icmp_req[ICMP_PKT_SIZE];
 	int ret;
 
-	uping_build_icmp_echo_request(icmp_req, sizeof(icmp_req), getpid(), id);
+	uping_build_icmp_echo_request(icmp_req, sizeof(icmp_req), id, seq);
 
 	ret = ipv4_send(dev, ipv4_mod, ipv4_dst_addr, dst_hwaddr, IPV4_PROT_ICMP,
                     icmp_req, sizeof(icmp_req));
@@ -295,28 +153,97 @@ static int uping_recv_icmp_echo_reply(struct ether_device *dev,
 	return err;
 }
 
-int main(int argc, char *argv[])
+static void uping_loop(struct uping_stack *uping_stack,
+                       const char *ipv4_addr_ping_str,
+                       uint32_t ipv4_addr_ping, uint8_t *hwaddr)
 {
-	struct uping_config uping_cfg;
-	struct uping_stack uping_stack;
-	uint32_t ipv4_addr_ping;
 	struct uping_info info;
-	uint8_t hwaddr[6];
-	char str[32];
-	int seq, ret;
+	int ret, id, seq;
 
-	uping_config_init(argc, argv, &uping_cfg);
+	id = getpid();
 
-	if (verbose_on(&uping_cfg)) {
-		fprintf(stderr, "iface: %s\n", uping_cfg.iface);
-		fprintf(stderr, "host ipv4 address: %s\n",uping_cfg.ipv4_addr_host_str);
-		fprintf(stderr, "host hwaddr: %s\n", uping_cfg.hwaddr_host_str);
-		fprintf(stderr, "address to ping: %s\n", uping_cfg.ipv4_addr_ping_str);
-		fprintf(stderr, "\n\n");
+	for (seq = 1; ; seq++) {
+		ret = uping_send_icmp_echo_request(uping_stack->dev,
+    	                                   uping_stack->ipv4_mod,
+										   ipv4_addr_ping, hwaddr, id, seq);
+		if (ret < 0) {
+			perror("uping_send_icmp_echo_request()");
+			exit(1);
+		}
+
+		info.id = id;
+		info.seq = seq;
+		ret = uping_recv_icmp_echo_reply(uping_stack->dev, &info);
+		if (!ret) {
+			fprintf(stderr,
+				"%d bytes from %s: icmp_seq=%d ttl=%d time=%1.3f ms\n",
+				(int) info.datagram_size, ipv4_addr_ping_str, seq,
+				info.ttl, (float) time_diff_now(info.time) * 0.001);
+		} else if (ret == -2) {
+			fprintf(stderr, "no response received (timeout)\n");
+		} else {
+			perror("failed getting icmp response");
+		}
+
+		if (seq == USHRT_MAX)
+			seq = 1;
+
+		sleep(1);
+	}
+}
+
+static void uping_stack_init(const struct ipv4_stack_config *cfg,
+                             struct uping_stack *uping_stack)
+{
+	int ret;
+
+	uping_stack->dev = ether_dev_alloc(cfg->hwaddr);
+	if (!uping_stack->dev) {
+		perror("ether_dev_alloc()");
+		exit(1);
 	}
 
-	uping_stack_init(&uping_cfg, &uping_stack);
-	ipv4_addr_ping = inet_network(uping_cfg.ipv4_addr_ping_str);
+	ret = ether_dev_open(uping_stack->dev, cfg->ifname);
+	if (ret < 0) {
+		perror("ether_dev_open()");
+		exit(1);
+	}
+
+	uping_stack->ipv4_mod = ipv4_module_alloc(cfg->ipv4_host_addr);
+	if (!uping_stack->ipv4_mod) {
+		perror("ipv4_module_alloc()");
+		exit(1);
+	}
+}
+
+static void usage(void)
+{
+	printf("uping <config-file> <ipv4-addr>\n");
+}
+
+int main(int argc, char *argv[])
+{
+	struct ipv4_stack_config config;
+	const char *ipv4_addr_ping_str;
+	struct uping_stack uping_stack;
+	uint32_t ipv4_addr_ping;
+	uint8_t hwaddr[6];
+	int ret;
+
+	if (argc != 3) {
+		usage();
+		exit(1);
+	}
+
+	memset(&config, 0, sizeof(config));
+	ipv4_read_stack_config(argv[1], &config);
+	ipv4_addr_ping_str = argv[2];
+
+	uping_stack_init(&config, &uping_stack);
+	ipv4_addr_ping = inet_network(ipv4_addr_ping_str);
+
+	fprintf(stderr, "PING %s (%s) %d bytes of data\n", ipv4_addr_ping_str,
+            ipv4_addr_ping_str, ICMP_PKT_SIZE);
 
 	/*
 	 * XXX: Without this sending a packet through the tap interface
@@ -330,54 +257,14 @@ int main(int argc, char *argv[])
                           ipv4_addr_ping, hwaddr);
 	if (ret < 0) {
 		if (ret == -2) {
-			fprintf(stderr, "no echo reply from %s\n",
-                          uping_cfg.ipv4_addr_ping_str);
+			fprintf(stderr, "no echo reply from %s\n", ipv4_addr_ping_str);
 		} else {
 			perror("arp_find_hwaddr()");
 		}
 		exit(1);
 	}
 
-	if (verbose_on(&uping_cfg)) {
-		memset(str, 0, sizeof(str));
-		ether_addr_to_str(hwaddr, str, sizeof(str));
-		printf("%s is %s\n", uping_cfg.ipv4_addr_ping_str, str);
-	}
-
-	fprintf(stderr, "PING %s (%s) %d bytes of data\n",
-	        uping_cfg.ipv4_addr_ping_str,
-            uping_cfg.ipv4_addr_ping_str, ICMP_PKT_SIZE);
-
-	for (seq = 1; ; seq++) {
-		ret = uping_send_icmp_echo_request(uping_stack.dev,
-    	                                   uping_stack.ipv4_mod,
-										   ipv4_addr_ping, hwaddr, seq);
-		if (ret < 0) {
-			perror("uping_send_icmp_echo_request()");
-			exit(1);
-		}
-
-		info.id = getpid();
-		info.seq = seq;
-		ret = uping_recv_icmp_echo_reply(uping_stack.dev, &info);
-		if (!ret) {
-			fprintf(stderr,
-				"%d bytes from %s: icmp_seq=%d ttl=%d time=%1.3f ms\n",
-				(int) info.datagram_size, uping_cfg.ipv4_addr_ping_str,
-				seq, info.ttl, (float) time_diff_now(info.time) * 0.001);
-		} else if (ret == -2) {
-			fprintf(stderr, "no response received (timeout)\n");
-		} else {
-			perror("failed getting icmp response");
-		}
-
-		if (seq == USHRT_MAX)
-			seq = 1;
-
-		sleep(1);
-	}
-
-	uping_config_destroy(&uping_cfg);
+	uping_loop(&uping_stack, ipv4_addr_ping_str, ipv4_addr_ping, hwaddr);
 
 	return 0;
 }
