@@ -435,6 +435,8 @@ int main(int argc, char *argv[])
 				"%d bytes from %s: icmp_seq=%d ttl=%d time=%1.3f ms\n",
 				(int) info.datagram_size, uping_cfg.ipv4_addr_ping_str,
 				seq, info.ttl, (float) time_diff_now(info.time) * 0.001);
+		} else if (ret == -2) {
+			fprintf(stderr, "no response received (timeout)\n");
 		} else {
 			perror("failed getting icmp response");
 		}
