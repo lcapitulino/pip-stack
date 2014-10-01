@@ -18,19 +18,12 @@
 #include <signal.h>
 #include <readline/readline.h>
 #include <readline/history.h>
-#include <libconfig.h>
 
 #include "common.h"
 #include "ether.h"
 #include "arp.h"
 #include "ipv4.h"
 #include "utils.h"
-
-struct uarp_config {
-	const char *ifname;
-	const char *hwaddr_str;
-	const char *ipv4_addr_str;
-};
 
 struct uarp_protocol_stack {
 	struct ether_device *dev;
@@ -212,57 +205,12 @@ static void usage(void)
 	printf("Usage: uarp <config-file>\n");
 }
 
-static void xconfig_lookup_string(config_t *cfg,
-                                  const char *key, const char **str,
-								  const char *config_file_path)
-{
-	int ret;
-
-	ret = config_lookup_string(cfg, key, str);
-	if (!ret) {
-		fprintf(stderr, "ERROR: could not locate '%s' in '%s'\n",
-                        "iface", config_file_path);
-		exit(1);
-	}
-}
-
-static void read_ipv4_config(const char *config_file_path,
-                             struct uarp_config *uarp_cfg)
-{
-	const char *str;
-	config_t cfg;
-	int ret;
-
-	config_init(&cfg);
-
-	ret = config_read_file(&cfg, config_file_path);
-	if (!ret) {
-		fprintf(stderr, "%s:%d - %s\n",
-                        config_error_file(&cfg),
-						config_error_line(&cfg),
-						config_error_text(&cfg));
-		exit(1);
-	}
-
-	xconfig_lookup_string(&cfg, "iface", &str, config_file_path);
-	uarp_cfg->ifname = xstrdup(str);
-
-	xconfig_lookup_string(&cfg, "ipv4_addr", &str, config_file_path);
-	uarp_cfg->ipv4_addr_str = xstrdup(str);
-
-	xconfig_lookup_string(&cfg, "hwaddr", &str, config_file_path);
-	uarp_cfg->hwaddr_str = xstrdup(str);
-
-	config_destroy(&cfg);
-}
-
 int main(int argc, char *argv[])
 {
 	struct uarp_protocol_stack stack;
-	struct uarp_config config;
+	struct ipv4_stack_config config;
 	struct ether_device *dev;
 	struct sigaction act;
-	uint8_t hwaddr[6];
 	int err;
 
 	if (argc != 2) {
@@ -270,14 +218,10 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	read_ipv4_config(argv[1], &config);
-	die_if_not_passed("ifname", config.ifname);
-	die_if_not_passed("hwaddr", config.hwaddr_str);
-	die_if_not_passed("ipv4addr", config.ipv4_addr_str);
+	memset(&config, 0, sizeof(config));
+	ipv4_read_stack_config(argv[1], &config);
 
-	ether_str_to_addr(config.hwaddr_str, hwaddr);
-
-	dev = ether_dev_alloc(hwaddr);
+	dev = ether_dev_alloc(config.hwaddr);
 	if (!dev) {
 		perror("ether_dev_alloc()");
 		exit(1);
@@ -294,7 +238,7 @@ int main(int argc, char *argv[])
 	memset(&stack, 0, sizeof(stack));
 	stack.dev = dev;
 
-	stack.ipv4 = ipv4_module_alloc(inet_network(config.ipv4_addr_str));
+	stack.ipv4 = ipv4_module_alloc(config.ipv4_host_addr);
 	if (!stack.ipv4) {
 		perror("ipv4_module_alloc()");
 		exit(1);
