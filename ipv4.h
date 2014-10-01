@@ -90,7 +90,7 @@ int ipv4_send(struct ether_device *dev, struct ipv4_module *ipv4_mod,
               uint32_t ipv4_dst_addr, uint8_t *dst_hwaddr, uint8_t protocol,
               const uint8_t *data, size_t data_size);
 
-struct ipv4_module *ipv4_module_alloc(const char *ipv4_addr_str);
+struct ipv4_module *ipv4_module_alloc(uint32_t ipv4_host_addr);
 void ipv4_module_free(struct ipv4_module *ipv4_mod);
 
 #endif /* IPV4_H */

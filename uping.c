@@ -143,6 +143,7 @@ static void uping_stack_init(const struct uping_config *uping_cfg,
                              struct uping_stack *uping_stack)
 {
 	uint8_t hwaddr[6];
+	uint32_t addr;
 	int ret;
 
 	ret = ether_str_to_addr(uping_cfg->hwaddr_host_str, hwaddr);
@@ -164,7 +165,8 @@ static void uping_stack_init(const struct uping_config *uping_cfg,
 		exit(1);
 	}
 
-	uping_stack->ipv4_mod = ipv4_module_alloc(uping_cfg->ipv4_addr_host_str);
+	addr = inet_network(uping_cfg->ipv4_addr_host_str);
+	uping_stack->ipv4_mod = ipv4_module_alloc(addr);
 	if (!uping_stack->ipv4_mod) {
 		perror("ipv4_module_alloc()");
 		exit(1);

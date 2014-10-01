@@ -24,7 +24,7 @@ START_TEST(test_ipv4_module_alloc)
 	const char *addr_str = "192.168.0.1";
 	struct ipv4_module *ipv4_mod;
 
-	ipv4_mod = ipv4_module_alloc(addr_str);
+	ipv4_mod = ipv4_module_alloc(inet_network(addr_str));
 	ck_assert(ipv4_mod != NULL);
 
 	ck_assert_int_eq(ipv4_mod->ipv4_addr, inet_network(addr_str));
@@ -35,8 +35,7 @@ END_TEST
 
 START_TEST(test_ipv4_module_alloc_free_errors)
 {
-	ck_assert_int_eq(ipv4_module_alloc(NULL), NULL);
-	ck_assert_int_eq(ipv4_module_alloc("jandjsa"), NULL);
+	ck_assert_int_eq(ipv4_module_alloc(0), 0);
 	ipv4_module_free(NULL);
 }
 END_TEST

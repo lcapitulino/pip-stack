@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
 	memset(&stack, 0, sizeof(stack));
 	stack.dev = dev;
 
-	stack.ipv4 = ipv4_module_alloc(config.ipv4_addr_str);
+	stack.ipv4 = ipv4_module_alloc(inet_network(config.ipv4_addr_str));
 	if (!stack.ipv4) {
 		perror("ipv4_module_alloc()");
 		exit(1);

@@ -14,34 +14,25 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
 #include "common.h"
 #include "utils.h"
 #include "ipv4.h"
 #include "ether.h"
 
-struct ipv4_module *ipv4_module_alloc(const char *ipv4_addr_str)
+struct ipv4_module *ipv4_module_alloc(uint32_t ipv4_host_addr)
 {
 	struct ipv4_module *ipv4_mod;
-	in_addr_t addr;
 
-	if (!ipv4_addr_str) {
+	if (!ipv4_host_addr) {
 		errno = EINVAL;
 		return NULL;
 	}
-
-	addr = inet_network(ipv4_addr_str);
-	if (addr == -1)
-		return NULL;
 
 	ipv4_mod = mallocz(sizeof(*ipv4_mod));
 	if (!ipv4_mod)
 		return NULL;
 
-	ipv4_mod->ipv4_addr = addr;
+	ipv4_mod->ipv4_addr = ipv4_host_addr;
 
 	return ipv4_mod;
 }
