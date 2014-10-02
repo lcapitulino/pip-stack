@@ -39,10 +39,21 @@ struct ipv4_module {
 	uint32_t ipv4_addr;
 };
 
+struct ipv4_route {
+	uint32_t dest_addr;
+	uint32_t mask;
+	uint32_t router_addr;
+	bool def_route;
+	bool in_use;
+};
+
+#define IPV4_MAX_ROUTE 6
+
 struct ipv4_stack_config {
 	char *ifname;
 	uint32_t ipv4_host_addr;
 	uint8_t hwaddr[6];
+	struct ipv4_route routes[IPV4_MAX_ROUTE];
 };
 
 struct ipv4_datagram {
@@ -101,5 +112,6 @@ void ipv4_module_free(struct ipv4_module *ipv4_mod);
 
 void ipv4_read_stack_config(const char *config_file_path,
                             struct ipv4_stack_config *stack_cfg);
+void ipv4_dump_stack_config(FILE *stream, struct ipv4_stack_config *cfg);
 
 #endif /* IPV4_H */

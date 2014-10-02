@@ -21,6 +21,20 @@
 #include "ipv4.h"
 #include "ether.h"
 
+static void xconfig_setting_lookup_string(config_setting_t *setting,
+                                          const char *key, const char **str,
+								          const char *config_file_path)
+{
+	int ret;
+
+	ret = config_setting_lookup_string(setting, key, str);
+	if (!ret) {
+		fprintf(stderr, "ERROR: could not locate '%s' in '%s'\n",
+                        key, config_file_path);
+		exit(1);
+	}
+}
+
 static void xconfig_lookup_string(config_t *cfg,
                                   const char *key, const char **str,
 								  const char *config_file_path)
@@ -38,9 +52,12 @@ static void xconfig_lookup_string(config_t *cfg,
 void ipv4_read_stack_config(const char *config_file_path,
                             struct ipv4_stack_config *stack_cfg)
 {
+	config_setting_t *root, *entry;
+	struct ipv4_route *p;
 	const char *str;
+	char name[32];
 	config_t cfg;
-	int ret;
+	int i, ret;
 
 	config_init(&cfg);
 
@@ -53,6 +70,7 @@ void ipv4_read_stack_config(const char *config_file_path,
 		exit(1);
 	}
 
+	/* Interface */
 	xconfig_lookup_string(&cfg, "iface", &str, config_file_path);
 	stack_cfg->ifname = xstrdup(str);
 
@@ -66,7 +84,66 @@ void ipv4_read_stack_config(const char *config_file_path,
 		exit(1);
 	}
 
+	/* Routes */
+	root = config_root_setting(&cfg);
+	for (i = 0; i < IPV4_MAX_ROUTE; i++) {
+		snprintf(name, sizeof(name), "route%d", i+1);
+		entry = config_setting_get_member(root, name);
+		if (!entry && i == 0) {
+			fprintf(stderr, "Can't find route1 in %s\n", config_file_path);
+			exit(1);
+		}
+		if (!entry)
+			break;
+
+		p = &stack_cfg->routes[i];
+		p->in_use = true;
+
+		xconfig_setting_lookup_string(entry, "destination", &str,
+		                              config_file_path);
+		p->dest_addr = inet_network(str);
+
+		xconfig_setting_lookup_string(entry, "mask", &str,
+		                              config_file_path);
+		p->mask = inet_network(str);
+
+		xconfig_setting_lookup_string(entry, "router", &str,
+		                              config_file_path);
+		p->router_addr = inet_network(str);
+
+		if (config_setting_lookup_bool(entry, "default", &ret))
+			p->def_route = ret;
+	}
+
 	config_destroy(&cfg);
+}
+
+void ipv4_dump_stack_config(FILE *stream, struct ipv4_stack_config *cfg)
+{
+	char str[64];
+	int i;
+
+	fprintf(stream, "stack configuration:\n\n");
+	fprintf(stream, "interface: %s\n", cfg->ifname);
+	ipv4_addr_to_str(cfg->ipv4_host_addr, str, sizeof(str));
+	fprintf(stream, "host address: %s\n", str);
+	ether_addr_to_str(cfg->hwaddr, str, sizeof(str));
+	fprintf(stream, "host hardware address: %s\n", str);
+
+	fprintf(stream, "\nRoutes:\n\n");
+	for (i = 0; i < IPV4_MAX_ROUTE; i++) {
+		if (!cfg->routes[i].in_use)
+			continue;
+		ipv4_addr_to_str(cfg->routes[i].dest_addr, str, sizeof(str));
+		fprintf(stream, "   -> %s ", str);
+		ipv4_addr_to_str(cfg->routes[i].mask, str, sizeof(str));
+		fprintf(stream, " %s ", str);
+		ipv4_addr_to_str(cfg->routes[i].router_addr, str, sizeof(str));
+		fprintf(stream, "via %s", str);
+		fprintf(stream, " %s\n", cfg->routes[i].def_route ? "default": "");
+	}
+
+	fprintf(stream, "\n");
 }
 
 struct ipv4_module *ipv4_module_alloc(uint32_t ipv4_host_addr)
