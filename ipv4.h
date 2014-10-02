@@ -35,10 +35,6 @@
 /* Default values */
 #define IPV4_DEF_TTL 64
 
-struct ipv4_module {
-	uint32_t ipv4_addr;
-};
-
 struct ipv4_route {
 	uint32_t dest_addr;
 	uint32_t mask;
@@ -49,7 +45,7 @@ struct ipv4_route {
 
 #define IPV4_MAX_ROUTE 6
 
-struct ipv4_stack_config {
+struct ipv4_module {
 	char *ifname;
 	uint32_t ipv4_host_addr;
 	uint8_t hwaddr[6];
@@ -72,6 +68,10 @@ struct ipv4_datagram {
 	uint8_t *buf;
 	size_t data_size;
 };
+
+struct ipv4_module *ipv4_module_init(const char *config_file_path);
+void ipv4_module_free(struct ipv4_module *ipv4_mod);;
+void ipv4_dump_stack_config(FILE *stream, struct ipv4_module *ipv4_mod);
 
 struct ipv4_datagram *ipv4_build_datagram(uint32_t src_addr,
                                           uint32_t dst_addr,
@@ -106,12 +106,5 @@ void ipv4_dump_datagram(FILE *stream, const struct ipv4_datagram *ipv4_dtg);
 int ipv4_send(struct ether_device *dev, struct ipv4_module *ipv4_mod,
               uint32_t ipv4_dst_addr, uint8_t *dst_hwaddr, uint8_t protocol,
               const uint8_t *data, size_t data_size);
-
-struct ipv4_module *ipv4_module_alloc(uint32_t ipv4_host_addr);
-void ipv4_module_free(struct ipv4_module *ipv4_mod);
-
-void ipv4_read_stack_config(const char *config_file_path,
-                            struct ipv4_stack_config *stack_cfg);
-void ipv4_dump_stack_config(FILE *stream, struct ipv4_stack_config *cfg);
 
 #endif /* IPV4_H */

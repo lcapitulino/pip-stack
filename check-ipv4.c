@@ -19,23 +19,8 @@
 #include "common.h"
 #include "ipv4.h"
 
-START_TEST(test_ipv4_module_alloc)
-{
-	const char *addr_str = "192.168.0.1";
-	struct ipv4_module *ipv4_mod;
-
-	ipv4_mod = ipv4_module_alloc(inet_network(addr_str));
-	ck_assert(ipv4_mod != NULL);
-
-	ck_assert_int_eq(ipv4_mod->ipv4_addr, inet_network(addr_str));
-
-	ipv4_module_free(ipv4_mod);
-}
-END_TEST
-
 START_TEST(test_ipv4_module_alloc_free_errors)
 {
-	ck_assert_int_eq(ipv4_module_alloc(0), 0);
 	ipv4_module_free(NULL);
 }
 END_TEST
@@ -131,7 +116,6 @@ Suite *ipv4_suite(void)
 	s = suite_create("IPv4");
 
 	mod_tests = tcase_create("module");
-	tcase_add_test(mod_tests, test_ipv4_module_alloc);
 	tcase_add_test(mod_tests, test_ipv4_module_alloc_free_errors);
 	suite_add_tcase(s, mod_tests);
 

@@ -49,15 +49,19 @@ static void xconfig_lookup_string(config_t *cfg,
 	}
 }
 
-void ipv4_read_stack_config(const char *config_file_path,
-                            struct ipv4_stack_config *stack_cfg)
+struct ipv4_module *ipv4_module_init(const char *config_file_path)
 {
 	config_setting_t *root, *entry;
+	struct ipv4_module *ipv4_mod;
 	struct ipv4_route *p;
 	const char *str;
 	char name[32];
 	config_t cfg;
 	int i, ret;
+
+	ipv4_mod = mallocz(sizeof(*ipv4_mod));
+	if (!ipv4_mod)
+		return NULL;
 
 	config_init(&cfg);
 
@@ -72,13 +76,13 @@ void ipv4_read_stack_config(const char *config_file_path,
 
 	/* Interface */
 	xconfig_lookup_string(&cfg, "iface", &str, config_file_path);
-	stack_cfg->ifname = xstrdup(str);
+	ipv4_mod->ifname = xstrdup(str);
 
 	xconfig_lookup_string(&cfg, "ipv4_addr", &str, config_file_path);
-	stack_cfg->ipv4_host_addr = inet_network(str);
+	ipv4_mod->ipv4_host_addr = inet_network(str);
 
 	xconfig_lookup_string(&cfg, "hwaddr", &str, config_file_path);
-	ret = ether_str_to_addr(str, stack_cfg->hwaddr);
+	ret = ether_str_to_addr(str, ipv4_mod->hwaddr);
 	if (ret < 0) {
 		fprintf(stderr, "bad hardware address: %s\n", str);
 		exit(1);
@@ -96,7 +100,7 @@ void ipv4_read_stack_config(const char *config_file_path,
 		if (!entry)
 			break;
 
-		p = &stack_cfg->routes[i];
+		p = &ipv4_mod->routes[i];
 		p->in_use = true;
 
 		xconfig_setting_lookup_string(entry, "destination", &str,
@@ -116,57 +120,43 @@ void ipv4_read_stack_config(const char *config_file_path,
 	}
 
 	config_destroy(&cfg);
-}
-
-void ipv4_dump_stack_config(FILE *stream, struct ipv4_stack_config *cfg)
-{
-	char str[64];
-	int i;
-
-	fprintf(stream, "stack configuration:\n\n");
-	fprintf(stream, "interface: %s\n", cfg->ifname);
-	ipv4_addr_to_str(cfg->ipv4_host_addr, str, sizeof(str));
-	fprintf(stream, "host address: %s\n", str);
-	ether_addr_to_str(cfg->hwaddr, str, sizeof(str));
-	fprintf(stream, "host hardware address: %s\n", str);
-
-	fprintf(stream, "\nRoutes:\n\n");
-	for (i = 0; i < IPV4_MAX_ROUTE; i++) {
-		if (!cfg->routes[i].in_use)
-			continue;
-		ipv4_addr_to_str(cfg->routes[i].dest_addr, str, sizeof(str));
-		fprintf(stream, "   -> %s ", str);
-		ipv4_addr_to_str(cfg->routes[i].mask, str, sizeof(str));
-		fprintf(stream, " %s ", str);
-		ipv4_addr_to_str(cfg->routes[i].router_addr, str, sizeof(str));
-		fprintf(stream, "via %s", str);
-		fprintf(stream, " %s\n", cfg->routes[i].def_route ? "default": "");
-	}
-
-	fprintf(stream, "\n");
-}
-
-struct ipv4_module *ipv4_module_alloc(uint32_t ipv4_host_addr)
-{
-	struct ipv4_module *ipv4_mod;
-
-	if (!ipv4_host_addr) {
-		errno = EINVAL;
-		return NULL;
-	}
-
-	ipv4_mod = mallocz(sizeof(*ipv4_mod));
-	if (!ipv4_mod)
-		return NULL;
-
-	ipv4_mod->ipv4_addr = ipv4_host_addr;
-
 	return ipv4_mod;
 }
 
 void ipv4_module_free(struct ipv4_module *ipv4_mod)
 {
-	free(ipv4_mod);
+	if (ipv4_mod) {
+		free(ipv4_mod->ifname);
+		free(ipv4_mod);
+	}
+}
+
+void ipv4_dump_stack_config(FILE *stream, struct ipv4_module *ipv4_mod)
+{
+	char str[64];
+	int i;
+
+	fprintf(stream, "stack configuration:\n\n");
+	fprintf(stream, "interface: %s\n", ipv4_mod->ifname);
+	ipv4_addr_to_str(ipv4_mod->ipv4_host_addr, str, sizeof(str));
+	fprintf(stream, "host address: %s\n", str);
+	ether_addr_to_str(ipv4_mod->hwaddr, str, sizeof(str));
+	fprintf(stream, "host hardware address: %s\n", str);
+
+	fprintf(stream, "\nRoutes:\n\n");
+	for (i = 0; i < IPV4_MAX_ROUTE; i++) {
+		if (!ipv4_mod->routes[i].in_use)
+			continue;
+		ipv4_addr_to_str(ipv4_mod->routes[i].dest_addr, str, sizeof(str));
+		fprintf(stream, "   -> %s ", str);
+		ipv4_addr_to_str(ipv4_mod->routes[i].mask, str, sizeof(str));
+		fprintf(stream, " %s ", str);
+		ipv4_addr_to_str(ipv4_mod->routes[i].router_addr, str, sizeof(str));
+		fprintf(stream, "via %s", str);
+		fprintf(stream, " %s\n", ipv4_mod->routes[i].def_route ? "default": "");
+	}
+
+	fprintf(stream, "\n");
 }
 
 static struct ipv4_datagram *ipv4_datagram_alloc(size_t data_size)
@@ -418,7 +408,7 @@ int ipv4_send(struct ether_device *dev, struct ipv4_module *ipv4_mod,
 	struct ipv4_datagram *ipv4_dtg;
 	int ret;
 
-	ipv4_dtg = ipv4_build_datagram(ipv4_mod->ipv4_addr, ipv4_dst_addr,
+	ipv4_dtg = ipv4_build_datagram(ipv4_mod->ipv4_host_addr, ipv4_dst_addr,
                                    protocol, data, data_size);
 	if (!ipv4_dtg)
 		return -1;

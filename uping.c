@@ -192,26 +192,26 @@ static void uping_loop(struct uping_stack *uping_stack,
 	}
 }
 
-static void uping_stack_init(const struct ipv4_stack_config *cfg,
-                             struct uping_stack *uping_stack)
+static void uping_stack_init(struct uping_stack *uping_stack,
+                             const char *config_file_path)
 {
 	int ret;
 
-	uping_stack->dev = ether_dev_alloc(cfg->hwaddr);
+	uping_stack->ipv4_mod = ipv4_module_init(config_file_path);
+	if (!uping_stack->ipv4_mod) {
+		perror("ipv4_module_alloc()");
+		exit(1);
+	}
+
+	uping_stack->dev = ether_dev_alloc(uping_stack->ipv4_mod->hwaddr);
 	if (!uping_stack->dev) {
 		perror("ether_dev_alloc()");
 		exit(1);
 	}
 
-	ret = ether_dev_open(uping_stack->dev, cfg->ifname);
+	ret = ether_dev_open(uping_stack->dev, uping_stack->ipv4_mod->ifname);
 	if (ret < 0) {
 		perror("ether_dev_open()");
-		exit(1);
-	}
-
-	uping_stack->ipv4_mod = ipv4_module_alloc(cfg->ipv4_host_addr);
-	if (!uping_stack->ipv4_mod) {
-		perror("ipv4_module_alloc()");
 		exit(1);
 	}
 }
@@ -223,7 +223,6 @@ static void usage(void)
 
 int main(int argc, char *argv[])
 {
-	struct ipv4_stack_config config;
 	const char *ipv4_addr_ping_str;
 	struct uping_stack uping_stack;
 	uint32_t ipv4_addr_ping;
@@ -235,11 +234,9 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	memset(&config, 0, sizeof(config));
-	ipv4_read_stack_config(argv[1], &config);
-	ipv4_addr_ping_str = argv[2];
+	uping_stack_init(&uping_stack, argv[1]);
 
-	uping_stack_init(&config, &uping_stack);
+	ipv4_addr_ping_str = argv[2];
 	ipv4_addr_ping = inet_network(ipv4_addr_ping_str);
 
 	fprintf(stderr, "PING %s (%s) %d bytes of data\n", ipv4_addr_ping_str,
@@ -253,7 +250,8 @@ int main(int argc, char *argv[])
 	sleep(1);
 
 	/* TODO: add assessors for these objects */
-	ret = arp_find_hwaddr(uping_stack.dev, uping_stack.ipv4_mod->ipv4_addr,
+	ret = arp_find_hwaddr(uping_stack.dev,
+                          uping_stack.ipv4_mod->ipv4_host_addr,
                           ipv4_addr_ping, hwaddr);
 	if (ret < 0) {
 		if (ret == -2) {

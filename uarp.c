@@ -78,7 +78,7 @@ static void uarp_shell_whois(struct uarp_protocol_stack *stack,
 		return;
 	}
 
-	err = arp_find_hwaddr(stack->dev, stack->ipv4->ipv4_addr, addr, hwaddr);
+	err = arp_find_hwaddr(stack->dev, stack->ipv4->ipv4_host_addr, addr, hwaddr);
 	if (err < 0) {
 		uarp_print_errno("failed to build ARP request");
 		return;
@@ -136,7 +136,7 @@ static void uarp_shell_reply(struct uarp_protocol_stack *stack,
 		if (arp_get_oper(arp_pkt) != ARP_OP_REQ)
 			continue;
 
-		if (arp_get_tpa(arp_pkt) != stack->ipv4->ipv4_addr)
+		if (arp_get_tpa(arp_pkt) != stack->ipv4->ipv4_host_addr)
 			continue;
 
 		/* ARP request for us */
@@ -208,8 +208,6 @@ static void usage(void)
 int main(int argc, char *argv[])
 {
 	struct uarp_protocol_stack stack;
-	struct ipv4_stack_config config;
-	struct ether_device *dev;
 	struct sigaction act;
 	int err;
 
@@ -218,31 +216,25 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	memset(&config, 0, sizeof(config));
-	ipv4_read_stack_config(argv[1], &config);
+	stack.ipv4 = ipv4_module_init(argv[1]);
+	if (!stack.ipv4) {
+		perror("ipv4_module_alloc()");
+		exit(1);
+	}
 
-	dev = ether_dev_alloc(config.hwaddr);
-	if (!dev) {
+	stack.dev = ether_dev_alloc(stack.ipv4->hwaddr);
+	if (!stack.dev) {
 		perror("ether_dev_alloc()");
 		exit(1);
 	}
 
-	err = ether_dev_open(dev, config.ifname);
+	err = ether_dev_open(stack.dev, stack.ipv4->ifname);
 	if (err < 0) {
 		perror("ether_dev_open()");
 		exit(1);
 	}
 
 	xsetunbuf(stdout);
-
-	memset(&stack, 0, sizeof(stack));
-	stack.dev = dev;
-
-	stack.ipv4 = ipv4_module_alloc(config.ipv4_host_addr);
-	if (!stack.ipv4) {
-		perror("ipv4_module_alloc()");
-		exit(1);
-	}
 
 	memset(&act, 0, sizeof(act));
 	act.sa_handler = uarp_signal_handler;
@@ -256,5 +248,6 @@ int main(int argc, char *argv[])
 
 	ipv4_module_free(stack.ipv4);
 	ether_dev_put(stack.dev);
+
 	return 0;
 }
