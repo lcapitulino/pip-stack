@@ -88,7 +88,6 @@ static void uping_build_icmp_echo_request(uint8_t *buf, size_t len,
 static int uping_send_icmp_echo_request(struct ether_device *dev,
                                         struct ipv4_module *ipv4_mod,
 										uint32_t ipv4_dst_addr,
-										uint8_t *dst_hwaddr,
 										uint16_t id, uint16_t seq)
 {
 	uint8_t icmp_req[ICMP_PKT_SIZE];
@@ -96,7 +95,7 @@ static int uping_send_icmp_echo_request(struct ether_device *dev,
 
 	uping_build_icmp_echo_request(icmp_req, sizeof(icmp_req), id, seq);
 
-	ret = ipv4_send(dev, ipv4_mod, ipv4_dst_addr, dst_hwaddr, IPV4_PROT_ICMP,
+	ret = ipv4_send(dev, ipv4_mod, ipv4_dst_addr, IPV4_PROT_ICMP,
                     icmp_req, sizeof(icmp_req));
 
 	return ret;
@@ -154,8 +153,7 @@ static int uping_recv_icmp_echo_reply(struct ether_device *dev,
 }
 
 static void uping_loop(struct uping_stack *uping_stack,
-                       const char *ipv4_addr_ping_str,
-                       uint32_t ipv4_addr_ping, uint8_t *hwaddr)
+                       const char *ipv4_addr_ping_str, uint32_t ipv4_addr_ping)
 {
 	struct uping_info info;
 	int ret, id, seq;
@@ -165,7 +163,7 @@ static void uping_loop(struct uping_stack *uping_stack,
 	for (seq = 1; ; seq++) {
 		ret = uping_send_icmp_echo_request(uping_stack->dev,
     	                                   uping_stack->ipv4_mod,
-										   ipv4_addr_ping, hwaddr, id, seq);
+										   ipv4_addr_ping, id, seq);
 		if (ret < 0) {
 			perror("uping_send_icmp_echo_request()");
 			exit(1);
@@ -226,8 +224,6 @@ int main(int argc, char *argv[])
 	const char *ipv4_addr_ping_str;
 	struct uping_stack uping_stack;
 	uint32_t ipv4_addr_ping;
-	uint8_t hwaddr[6];
-	int ret;
 
 	if (argc != 3) {
 		usage();
@@ -249,20 +245,7 @@ int main(int argc, char *argv[])
 	 */
 	sleep(1);
 
-	/* TODO: add assessors for these objects */
-	ret = arp_find_hwaddr(uping_stack.dev,
-                          uping_stack.ipv4_mod->ipv4_host_addr,
-                          ipv4_addr_ping, hwaddr);
-	if (ret < 0) {
-		if (ret == -2) {
-			fprintf(stderr, "no echo reply from %s\n", ipv4_addr_ping_str);
-		} else {
-			perror("arp_find_hwaddr()");
-		}
-		exit(1);
-	}
-
-	uping_loop(&uping_stack, ipv4_addr_ping_str, ipv4_addr_ping, hwaddr);
+	uping_loop(&uping_stack, ipv4_addr_ping_str, ipv4_addr_ping);
 
 	return 0;
 }

@@ -20,6 +20,7 @@
 #include "utils.h"
 #include "ipv4.h"
 #include "ether.h"
+#include "arp.h"
 
 static void xconfig_setting_lookup_string(config_setting_t *setting,
                                           const char *key, const char **str,
@@ -402,11 +403,17 @@ void ipv4_dump_datagram(FILE *stream, const struct ipv4_datagram *ipv4_dtg)
 }
 
 int ipv4_send(struct ether_device *dev, struct ipv4_module *ipv4_mod,
-              uint32_t ipv4_dst_addr, uint8_t *dst_hwaddr, uint8_t protocol,
+              uint32_t ipv4_dst_addr, uint8_t protocol,
               const uint8_t *data, size_t data_size)
 {
 	struct ipv4_datagram *ipv4_dtg;
+	uint8_t dst_hwaddr[6];
 	int ret;
+
+	ret = arp_find_hwaddr(dev, ipv4_mod->ipv4_host_addr,
+	                      ipv4_dst_addr, dst_hwaddr);
+	if (ret < 0)
+		return ret;
 
 	ipv4_dtg = ipv4_build_datagram(ipv4_mod->ipv4_host_addr, ipv4_dst_addr,
                                    protocol, data, data_size);

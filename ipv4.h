@@ -104,7 +104,7 @@ bool ipv4_datagram_is_good(const struct ipv4_datagram *ipv4_dtg);
 void ipv4_dump_datagram(FILE *stream, const struct ipv4_datagram *ipv4_dtg);
 
 int ipv4_send(struct ether_device *dev, struct ipv4_module *ipv4_mod,
-              uint32_t ipv4_dst_addr, uint8_t *dst_hwaddr, uint8_t protocol,
+              uint32_t ipv4_dst_addr, uint8_t protocol,
               const uint8_t *data, size_t data_size);
 
 #endif /* IPV4_H */

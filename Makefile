@@ -23,7 +23,7 @@ udp.o: udp.c udp.h utils.h common.h
 ipv4.o: ipv4.c ipv4.h ether.h utils.h common.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-arp.o: arp.c arp.h common.h utils.h ether.h
+arp.o: arp.c arp.h common.h utils.h ether.h arp.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
 ether.o: ether.c ether.h common.h utils.h
@@ -72,7 +72,7 @@ check-arp: check-arp.o arp.o ether.o utils.o -lcheck -lefence
 check-ipv4.o: check-ipv4.c ipv4.h ether.h common.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-check-ipv4: check-ipv4.o ipv4.o ether.o utils.o $(LIBS) -lcheck
+check-ipv4: check-ipv4.o ipv4.o arp.o ether.o utils.o $(LIBS) -lcheck
 	$(QUIET_LK)$(CC) -o $@ $+
 
 check: $(TESTS)
