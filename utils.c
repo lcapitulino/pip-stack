@@ -192,3 +192,16 @@ uint16_t calculate_net_checksum(const uint8_t *data, int len)
 {
 	return (uint16_t) ~do_csum(data, len);
 }
+
+int count_set_bits(uint32_t value)
+{
+	int i, count = 0;
+
+	for (i = 0; i < 32; i++) {
+		if (value & 0x1)
+			count++;
+		value >>= 1;
+	}
+
+	return count;
+}

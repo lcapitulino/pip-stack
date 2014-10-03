@@ -30,6 +30,24 @@ START_TEST(test_checksum_ok)
 }
 END_TEST
 
+START_TEST(test_count_bits)
+{
+	int ret;
+
+	ret = count_set_bits(0);
+	ck_assert_int_eq(ret, 0);
+
+	ret = count_set_bits(1);
+	ck_assert_int_eq(ret, 1);
+
+	ret = count_set_bits(0x270088);
+	ck_assert_int_eq(ret, 6);
+
+	ret = count_set_bits(UINT32_MAX);
+	ck_assert_int_eq(ret, 32);
+}
+END_TEST
+
 Suite *utils_suite(void)
 {
 	Suite *s;
@@ -39,6 +57,7 @@ Suite *utils_suite(void)
 
 	tc_utils = tcase_create("Core");
 	tcase_add_test(tc_utils, test_checksum_ok);
+	tcase_add_test(tc_utils, test_count_bits);
 	suite_add_tcase(s, tc_utils);
 
 	return s;
