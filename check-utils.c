@@ -34,16 +34,16 @@ START_TEST(test_count_bits)
 {
 	int ret;
 
-	ret = count_set_bits(0);
+	ret = count_bits_set(0);
 	ck_assert_int_eq(ret, 0);
 
-	ret = count_set_bits(1);
+	ret = count_bits_set(1);
 	ck_assert_int_eq(ret, 1);
 
-	ret = count_set_bits(0x270088);
+	ret = count_bits_set(0x270088);
 	ck_assert_int_eq(ret, 6);
 
-	ret = count_set_bits(UINT32_MAX);
+	ret = count_bits_set(UINT32_MAX);
 	ck_assert_int_eq(ret, 32);
 }
 END_TEST
