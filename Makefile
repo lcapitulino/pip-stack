@@ -7,7 +7,7 @@ endif
 
 CC := gcc
 CFLAGS := -Wall -ggdb -O0
-BIN := uarp udump uping
+BIN := parp pdump pping
 TESTS := check-utils check-ether check-arp check-ipv4
 MODULES_OBJS := utils.o ether.o arp.o ipv4.o udp.o
 LIBS := -lefence -lconfig
@@ -29,22 +29,22 @@ arp.o: arp.c arp.h common.h utils.h ether.h arp.h
 ether.o: ether.c ether.h common.h utils.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-uarp.o: uarp.c common.h ether.h arp.h utils.h ipv4.h
+parp.o: parp.c common.h ether.h arp.h utils.h ipv4.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-uarp: uarp.o $(MODULES_OBJS) $(LIBS) -lreadline
+parp: parp.o $(MODULES_OBJS) $(LIBS) -lreadline
 	$(QUIET_LK)$(CC) -o $@ $+
 
-uping.o: uping.c common.h ether.h arp.h utils.h ipv4.h
+pping.o: pping.c common.h ether.h arp.h utils.h ipv4.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-uping: uping.o $(MODULES_OBJS) $(LIBS)
+pping: pping.o $(MODULES_OBJS) $(LIBS)
 	$(QUIET_LK)$(CC) -o $@ $+
 
-udump.o: udump.c common.h ether.h arp.h udp.h utils.h
+pdump.o: pdump.c common.h ether.h arp.h udp.h utils.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-udump: udump.o $(MODULES_OBJS) $(LIBS)
+pdump: pdump.o $(MODULES_OBJS) $(LIBS)
 	$(QUIET_LK)$(CC) -o $@ $+
 
 ###

@@ -1,10 +1,10 @@
-uIP stack
+pIP stack
 =========
 
 This is a small IPv4/UDP networking stack in user-space. I wrote this just
 to (really) learn how IP/TCP works, although I don't plan implementing TCP.
 
-Currently, uIP supports Ethernet, ARP, IPv4 and UDP (not finished yet). The
+Currently, pIP supports Ethernet, ARP, IPv4 and UDP (not finished yet). The
 API is very modular, and I guess most of it should be reentrant. But it's
 not thread-safe for sure.
 
@@ -45,7 +45,7 @@ Setup
 =====
 
 There are two things to setup in order to play with this code: a tap
-interface and the networking settings for uIP.
+interface and the networking settings for pIP.
 
 Tap Interface
 -------------
@@ -61,21 +61,21 @@ With the bridge up and running, run these commands:
  # ip link set tap0 up
  # brctrl addif <your-bridge-name> tap0
 
-uIP stack configuration
+pIP stack configuration
 -----------------------
 
-All uIP programs read a configuration file containing informations like the
+All pIP programs read a configuration file containing informations like the
 IP address you want to use, hardware address, routes etc.
 
-You can find an example of this file in test/uip.cfg. You need to edit this
+You can find an example of this file in test/pip.cfg. You need to edit this
 file to match your network.
 
 Testing
 =======
 
-uIP comes with some test tools. The most interesting of them is "uping":
+pIP comes with some test tools. The most interesting of them is "uping":
 
-# /uping test/uip.cfg 74.125.225.19
+# ./pping test/pip.cfg 74.125.225.19
 PING 74.125.225.19 (74.125.225.19) 64 bytes of data
 64 bytes from 74.125.225.19: icmp_seq=1 ttl=57 time=38.880 ms
 64 bytes from 74.125.225.19: icmp_seq=2 ttl=57 time=39.346 ms
@@ -84,8 +84,8 @@ PING 74.125.225.19 (74.125.225.19) 64 bytes of data
 
  (don't pass a name in there, because the stack doesn't have DNS support)
 
-There are also two other tools: udump (which just dump packets, this was
-the first tool I wrote) and uarp (which is a command-line ARP).
+There are also two other tools: pdump (which just dump packets, this was
+the first tool I wrote) and parp (which is a command-line ARP).
 
 Contact
 =======
