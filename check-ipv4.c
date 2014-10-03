@@ -65,7 +65,7 @@ START_TEST(test_ipv4_datagram_from_data)
 	ck_assert_int_eq(ipv4_get_dst_addr(ipv4_dtg), addr);
 
 	ck_assert_int_eq(ipv4_get_data_size(ipv4_dtg), 0);
-	ck_assert_int_eq(ipv4_get_data(ipv4_dtg), NULL);
+	ck_assert(ipv4_get_data(ipv4_dtg) == NULL);
 
 	ipv4_datagram_free(ipv4_dtg);
 }
