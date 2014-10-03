@@ -115,9 +115,6 @@ struct ipv4_module *ipv4_module_init(const char *config_file_path)
 		xconfig_setting_lookup_string(entry, "router", &str,
 		                              config_file_path);
 		p->router_addr = inet_network(str);
-
-		if (config_setting_lookup_bool(entry, "default", &ret))
-			p->def_route = ret;
 	}
 
 	config_destroy(&cfg);
@@ -154,7 +151,6 @@ void ipv4_dump_stack_config(FILE *stream, struct ipv4_module *ipv4_mod)
 		fprintf(stream, " %s ", str);
 		ipv4_addr_to_str(ipv4_mod->routes[i].router_addr, str, sizeof(str));
 		fprintf(stream, "via %s", str);
-		fprintf(stream, " %s\n", ipv4_mod->routes[i].def_route ? "default": "");
 	}
 
 	fprintf(stream, "\n");

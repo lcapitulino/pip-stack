@@ -39,7 +39,6 @@ struct ipv4_route {
 	uint32_t dest_addr;
 	uint32_t mask;
 	uint32_t router_addr;
-	bool def_route;
 	bool in_use;
 };
 
