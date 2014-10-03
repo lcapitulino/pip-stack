@@ -111,6 +111,7 @@ struct ipv4_module *ipv4_module_init(const char *config_file_path)
 		xconfig_setting_lookup_string(entry, "mask", &str,
 		                              config_file_path);
 		p->mask = inet_network(str);
+		p->mask_nr_bits_set = count_bits_set(p->mask);
 
 		xconfig_setting_lookup_string(entry, "router", &str,
 		                              config_file_path);
@@ -398,16 +399,50 @@ void ipv4_dump_datagram(FILE *stream, const struct ipv4_datagram *ipv4_dtg)
 	fprintf(stream, "\n");
 }
 
+static int ipv4_find_router(const struct ipv4_module *ipv4_mod,
+                            uint32_t ipv4_dst_addr, uint32_t *router_addr)
+{
+	const struct ipv4_route *p;
+	int i, bits_max;
+
+	bits_max = -1;
+
+	for (i = 0; i < IPV4_MAX_ROUTE; i++) {
+		p = &ipv4_mod->routes[i];
+		if (!p->in_use)
+			continue;
+
+		if ((p->mask & ipv4_dst_addr) == p->dest_addr) {
+			if (p->mask_nr_bits_set > bits_max) {
+				bits_max = p->mask_nr_bits_set;
+				*router_addr = p->router_addr;
+			}
+		}
+	}
+
+	return bits_max == -1 ? -1 : 0;
+}
+
 int ipv4_send(struct ether_device *dev, struct ipv4_module *ipv4_mod,
               uint32_t ipv4_dst_addr, uint8_t protocol,
               const uint8_t *data, size_t data_size)
 {
 	struct ipv4_datagram *ipv4_dtg;
+	uint32_t next_hop_addr;
 	uint8_t dst_hwaddr[6];
 	int ret;
 
+	ret = ipv4_find_router(ipv4_mod, ipv4_dst_addr, &next_hop_addr);
+	if (ret < 0)
+		return EHOSTUNREACH;
+
+	if (!next_hop_addr) {
+		/* direct delivery */
+		next_hop_addr = ipv4_dst_addr;
+	}
+
 	ret = arp_find_hwaddr(dev, ipv4_mod->ipv4_host_addr,
-	                      ipv4_dst_addr, dst_hwaddr);
+	                      next_hop_addr, dst_hwaddr);
 	if (ret < 0)
 		return ret;
 
