@@ -24,12 +24,12 @@
 
 #define ICMP_PKT_SIZE 64
 
-struct uping_stack {
+struct pping_stack {
 	struct ether_device *dev;
 	struct ipv4_module *ipv4_mod;
 };
 
-struct uping_info {
+struct pping_info {
 	size_t datagram_size;
 	int ttl;
 	suseconds_t time;
@@ -54,7 +54,7 @@ static suseconds_t time_diff_now(suseconds_t before)
 	return get_time() - before;
 }
 
-static void uping_build_icmp_echo_request(uint8_t *buf, size_t len,
+static void pping_build_icmp_echo_request(uint8_t *buf, size_t len,
                                           uint16_t id, uint16_t seq)
 {
 	suseconds_t t;
@@ -85,7 +85,7 @@ static void uping_build_icmp_echo_request(uint8_t *buf, size_t len,
 
 }
 
-static int uping_send_icmp_echo_request(struct ether_device *dev,
+static int pping_send_icmp_echo_request(struct ether_device *dev,
                                         struct ipv4_module *ipv4_mod,
 										uint32_t ipv4_dst_addr,
 										uint16_t id, uint16_t seq)
@@ -93,7 +93,7 @@ static int uping_send_icmp_echo_request(struct ether_device *dev,
 	uint8_t icmp_req[ICMP_PKT_SIZE];
 	int ret;
 
-	uping_build_icmp_echo_request(icmp_req, sizeof(icmp_req), id, seq);
+	pping_build_icmp_echo_request(icmp_req, sizeof(icmp_req), id, seq);
 
 	ret = ipv4_send(dev, ipv4_mod, ipv4_dst_addr, IPV4_PROT_ICMP,
                     icmp_req, sizeof(icmp_req));
@@ -101,9 +101,9 @@ static int uping_send_icmp_echo_request(struct ether_device *dev,
 	return ret;
 }
 
-static int uping_handle_icmp(struct ether_frame *frame, void *data)
+static int pping_handle_icmp(struct ether_frame *frame, void *data)
 {
-	struct uping_info *info = data;
+	struct pping_info *info = data;
 	struct ipv4_datagram *ipv4_dtg;
 	int ret = ETHER_DISP_CONT;
 	uint16_t *idp, *seqp;
@@ -137,14 +137,14 @@ out:
 	return ret;
 }
 
-static int uping_recv_icmp_echo_reply(struct ether_device *dev,
-                                      struct uping_info *info)
+static int pping_recv_icmp_echo_reply(struct ether_device *dev,
+                                      struct pping_info *info)
 {
 	struct ether_dispatch dispatch;
 	int err;
 
 	memset(&dispatch, 0, sizeof(dispatch));
-	dispatch.handler_ipv4 = uping_handle_icmp;
+	dispatch.handler_ipv4 = pping_handle_icmp;
 	dispatch.data = info;
 
 	err = ether_dev_recv_dispatch(dev, &dispatch, 2);
@@ -152,26 +152,26 @@ static int uping_recv_icmp_echo_reply(struct ether_device *dev,
 	return err;
 }
 
-static void uping_loop(struct uping_stack *uping_stack,
+static void pping_loop(struct pping_stack *pping_stack,
                        const char *ipv4_addr_ping_str, uint32_t ipv4_addr_ping)
 {
-	struct uping_info info;
+	struct pping_info info;
 	int ret, id, seq;
 
 	id = getpid();
 
 	for (seq = 1; ; seq++) {
-		ret = uping_send_icmp_echo_request(uping_stack->dev,
-    	                                   uping_stack->ipv4_mod,
+		ret = pping_send_icmp_echo_request(pping_stack->dev,
+    	                                   pping_stack->ipv4_mod,
 										   ipv4_addr_ping, id, seq);
 		if (ret < 0) {
-			perror("uping_send_icmp_echo_request()");
+			perror("pping_send_icmp_echo_request()");
 			exit(1);
 		}
 
 		info.id = id;
 		info.seq = seq;
-		ret = uping_recv_icmp_echo_reply(uping_stack->dev, &info);
+		ret = pping_recv_icmp_echo_reply(pping_stack->dev, &info);
 		if (!ret) {
 			fprintf(stderr,
 				"%d bytes from %s: icmp_seq=%d ttl=%d time=%1.3f ms\n",
@@ -190,24 +190,24 @@ static void uping_loop(struct uping_stack *uping_stack,
 	}
 }
 
-static void uping_stack_init(struct uping_stack *uping_stack,
+static void pping_stack_init(struct pping_stack *pping_stack,
                              const char *config_file_path)
 {
 	int ret;
 
-	uping_stack->ipv4_mod = ipv4_module_init(config_file_path);
-	if (!uping_stack->ipv4_mod) {
+	pping_stack->ipv4_mod = ipv4_module_init(config_file_path);
+	if (!pping_stack->ipv4_mod) {
 		perror("ipv4_module_alloc()");
 		exit(1);
 	}
 
-	uping_stack->dev = ether_dev_alloc(uping_stack->ipv4_mod->hwaddr);
-	if (!uping_stack->dev) {
+	pping_stack->dev = ether_dev_alloc(pping_stack->ipv4_mod->hwaddr);
+	if (!pping_stack->dev) {
 		perror("ether_dev_alloc()");
 		exit(1);
 	}
 
-	ret = ether_dev_open(uping_stack->dev, uping_stack->ipv4_mod->ifname);
+	ret = ether_dev_open(pping_stack->dev, pping_stack->ipv4_mod->ifname);
 	if (ret < 0) {
 		perror("ether_dev_open()");
 		exit(1);
@@ -222,7 +222,7 @@ static void usage(void)
 int main(int argc, char *argv[])
 {
 	const char *ipv4_addr_ping_str;
-	struct uping_stack uping_stack;
+	struct pping_stack pping_stack;
 	uint32_t ipv4_addr_ping;
 
 	if (argc != 3) {
@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	uping_stack_init(&uping_stack, argv[1]);
+	pping_stack_init(&pping_stack, argv[1]);
 
 	ipv4_addr_ping_str = argv[2];
 	ipv4_addr_ping = inet_network(ipv4_addr_ping_str);
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
 	 */
 	sleep(1);
 
-	uping_loop(&uping_stack, ipv4_addr_ping_str, ipv4_addr_ping);
+	pping_loop(&pping_stack, ipv4_addr_ping_str, ipv4_addr_ping);
 
 	return 0;
 }
