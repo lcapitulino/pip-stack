@@ -47,7 +47,8 @@ struct ether_device *ether_dev_alloc(const uint8_t *hwaddr)
 void ether_dev_put(struct ether_device *dev)
 {
 	if (dev && --dev->cnt == 0) {
-		close(dev->fd);
+		if (dev->fd > -1)
+			close(dev->fd);
 		free(dev);
 	}
 }
