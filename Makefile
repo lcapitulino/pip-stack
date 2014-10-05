@@ -29,16 +29,19 @@ arp.o: arp.c arp.h common.h utils.h ether.h arp.h
 ether.o: ether.c ether.h common.h utils.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
+pip-api.o: pip-api.c ether.h ipv4.h common.h
+	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
+
 parp.o: parp.c common.h ether.h arp.h utils.h ipv4.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
 parp: parp.o $(MODULES_OBJS) $(LIBS) -lreadline
 	$(QUIET_LK)$(CC) -o $@ $+
 
-pping.o: pping.c common.h ether.h arp.h utils.h ipv4.h
+pping.o: pping.c common.h ether.h arp.h utils.h ipv4.h pip-api.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
-pping: pping.o $(MODULES_OBJS) $(LIBS)
+pping: pping.o pip-api.o $(MODULES_OBJS) $(LIBS)
 	$(QUIET_LK)$(CC) -o $@ $+
 
 pdump.o: pdump.c common.h ether.h arp.h udp.h utils.h

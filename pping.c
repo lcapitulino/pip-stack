@@ -16,6 +16,7 @@
  */
 #include <sys/time.h>
 
+#include "pip-api.h"
 #include "common.h"
 #include "utils.h"
 #include "ether.h"
@@ -23,11 +24,6 @@
 #include "ipv4.h"
 
 #define ICMP_PKT_SIZE 64
-
-struct pping_stack {
-	struct ether_device *dev;
-	struct ipv4_module *ipv4_mod;
-};
 
 struct pping_info {
 	size_t datagram_size;
@@ -152,7 +148,7 @@ static int pping_recv_icmp_echo_reply(struct ether_device *dev,
 	return err;
 }
 
-static void pping_loop(struct pping_stack *pping_stack,
+static void pping_loop(struct pip_stack *pip_stack,
                        const char *ipv4_addr_ping_str, uint32_t ipv4_addr_ping)
 {
 	struct pping_info info;
@@ -161,8 +157,8 @@ static void pping_loop(struct pping_stack *pping_stack,
 	id = getpid();
 
 	for (seq = 1; ; seq++) {
-		ret = pping_send_icmp_echo_request(pping_stack->dev,
-    	                                   pping_stack->ipv4_mod,
+		ret = pping_send_icmp_echo_request(pip_stack->dev,
+    	                                   pip_stack->ipv4_mod,
 										   ipv4_addr_ping, id, seq);
 		if (ret < 0) {
 			perror("pping_send_icmp_echo_request()");
@@ -171,7 +167,7 @@ static void pping_loop(struct pping_stack *pping_stack,
 
 		info.id = id;
 		info.seq = seq;
-		ret = pping_recv_icmp_echo_reply(pping_stack->dev, &info);
+		ret = pping_recv_icmp_echo_reply(pip_stack->dev, &info);
 		if (!ret) {
 			fprintf(stderr,
 				"%d bytes from %s: icmp_seq=%d ttl=%d time=%1.3f ms\n",
@@ -190,30 +186,6 @@ static void pping_loop(struct pping_stack *pping_stack,
 	}
 }
 
-static void pping_stack_init(struct pping_stack *pping_stack,
-                             const char *config_file_path)
-{
-	int ret;
-
-	pping_stack->ipv4_mod = ipv4_module_init(config_file_path);
-	if (!pping_stack->ipv4_mod) {
-		perror("ipv4_module_alloc()");
-		exit(1);
-	}
-
-	pping_stack->dev = ether_dev_alloc(pping_stack->ipv4_mod->hwaddr);
-	if (!pping_stack->dev) {
-		perror("ether_dev_alloc()");
-		exit(1);
-	}
-
-	ret = ether_dev_open(pping_stack->dev, pping_stack->ipv4_mod->ifname);
-	if (ret < 0) {
-		perror("ether_dev_open()");
-		exit(1);
-	}
-}
-
 static void usage(void)
 {
 	printf("uping <config-file> <ipv4-addr>\n");
@@ -222,7 +194,7 @@ static void usage(void)
 int main(int argc, char *argv[])
 {
 	const char *ipv4_addr_ping_str;
-	struct pping_stack pping_stack;
+	struct pip_stack pip_stack;
 	uint32_t ipv4_addr_ping;
 
 	if (argc != 3) {
@@ -230,7 +202,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	pping_stack_init(&pping_stack, argv[1]);
+	pip_stack_init(&pip_stack, argv[1]);
 
 	ipv4_addr_ping_str = argv[2];
 	ipv4_addr_ping = inet_network(ipv4_addr_ping_str);
@@ -245,7 +217,7 @@ int main(int argc, char *argv[])
 	 */
 	sleep(1);
 
-	pping_loop(&pping_stack, ipv4_addr_ping_str, ipv4_addr_ping);
+	pping_loop(&pip_stack, ipv4_addr_ping_str, ipv4_addr_ping);
 
 	return 0;
 }
