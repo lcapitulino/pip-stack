@@ -7,7 +7,7 @@ endif
 
 CC := gcc
 CFLAGS := -Wall -ggdb -O0
-BIN := parp pdump pping
+BIN := parp pdump pping pecho-server
 TESTS := check-utils check-ether check-arp check-ipv4
 MODULES_OBJS := utils.o ether.o arp.o ipv4.o udp.o
 LIBS := -lefence -lconfig
@@ -48,6 +48,12 @@ pdump.o: pdump.c common.h ether.h arp.h udp.h utils.h
 	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
 
 pdump: pdump.o $(MODULES_OBJS) $(LIBS)
+	$(QUIET_LK)$(CC) -o $@ $+
+
+pecho-server.o: pecho-server.c pip-api.h common.h ether.h udp.h
+	$(QUIET_CC)$(CC) $(CFLAGS) -c $<
+
+pecho-server: pecho-server.o pip-api.o $(MODULES_OBJS) $(LIBS)
 	$(QUIET_LK)$(CC) -o $@ $+
 
 ###
