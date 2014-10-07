@@ -26,6 +26,7 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <ctype.h>
 #include <arpa/inet.h>
 
 #endif /* COMMON_H */
