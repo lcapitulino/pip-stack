@@ -17,6 +17,7 @@
 #ifndef UDP_H
 #define UDP_H
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>
 
@@ -34,6 +35,8 @@ struct udp_datagram {
 
 struct udp_datagram *udp_datagram_from_data(const uint8_t *data,
                                             size_t data_size);
+struct udp_datagram *udp_build_datagram(uint16_t src_port, uint16_t dst_port,
+                                        const uint8_t *data, size_t size);
 void udp_datagram_free(struct udp_datagram *udp_dtg);
 
 uint16_t udp_get_src_port(const struct udp_datagram *udp_dtg);

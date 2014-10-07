@@ -20,7 +20,7 @@
 #include "utils.h"
 #include "udp.h"
 
-struct udp_datagram *udp_datagram_from_data(const uint8_t *data, size_t size)
+struct udp_datagram *udp_datagram_alloc(size_t data_size)
 {
 	struct udp_datagram *udp_dtg;
 	uint8_t *p;
@@ -30,7 +30,7 @@ struct udp_datagram *udp_datagram_from_data(const uint8_t *data, size_t size)
 	if (!udp_dtg)
 		return NULL;
 
-	p = mallocz(size);
+	p = mallocz(data_size + UDP_HEADER_SIZE);
 	if (!p) {
 		err_no = errno;
 		free(udp_dtg);
@@ -45,9 +45,8 @@ struct udp_datagram *udp_datagram_from_data(const uint8_t *data, size_t size)
 	udp_dtg->data_start = &p[8];
 	udp_dtg->buf = p;
 
-	udp_dtg->data_size = size - UDP_HEADER_SIZE;
-
-	memcpy(p, data, size);
+	*udp_dtg->length = htons(data_size + UDP_HEADER_SIZE);
+	udp_dtg->data_size = data_size;
 
 	return udp_dtg;
 }
@@ -58,6 +57,35 @@ void udp_datagram_free(struct udp_datagram *udp_dtg)
 		free(udp_dtg->buf);
 		free(udp_dtg);
 	}
+}
+
+struct udp_datagram *udp_datagram_from_data(const uint8_t *data, size_t size)
+{
+	struct udp_datagram *udp_dtg;
+
+	udp_dtg = udp_datagram_alloc(size - UDP_HEADER_SIZE);
+	if (!udp_dtg)
+		return NULL;
+
+	memcpy(udp_dtg->buf, data, size);
+
+	return udp_dtg;
+}
+
+struct udp_datagram *udp_build_datagram(uint16_t src_port, uint16_t dst_port,
+                                        const uint8_t *data, size_t size)
+{
+	struct udp_datagram *udp_dtg;
+
+	udp_dtg = udp_datagram_alloc(size);
+	if (!udp_dtg)
+		return NULL;
+
+	*udp_dtg->src_port = htons(src_port);
+	*udp_dtg->dst_port = htons(dst_port);
+	memcpy(udp_dtg->data_start, data, size);
+
+	return udp_dtg;
 }
 
 uint16_t udp_get_src_port(const struct udp_datagram *udp_dtg)
