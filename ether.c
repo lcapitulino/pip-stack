@@ -133,23 +133,25 @@ struct ether_frame *ether_dev_recv(struct ether_device *dev)
 
 int ether_dev_recv_dispatch(struct ether_device *dev,
                             struct ether_dispatch *cfg,
-							int sec_timeout)
+                            int sec_timeout)
 {
+	struct timeval tv, *tvp = NULL;
+	int err, ret = ETHER_DISP_CONT;
 	struct ether_frame *frame;
-	struct timeval tv;
-	const uint8_t *p;
 	fd_set rfds;
-	int ret;
 
-	memset(&tv, 0, sizeof(tv));
-	tv.tv_sec = sec_timeout;
+	if (sec_timeout != -1) {
+		memset(&tv, 0, sizeof(tv));
+		tv.tv_sec = sec_timeout;
+		tvp = &tv;
+	}
 
 	while (true) {
 		FD_ZERO(&rfds);
 		FD_SET(dev->fd, &rfds);
 
-		ret = select(dev->fd + 1, &rfds, NULL, NULL, &tv);
-		if (ret < 0) {
+		err = select(dev->fd + 1, &rfds, NULL, NULL, tvp);
+		if (err < 0) {
 			cfg->err_num = errno;
 			return -1;
 		}
@@ -162,12 +164,6 @@ int ether_dev_recv_dispatch(struct ether_device *dev,
 			cfg->err_num = errno;
 			return -1;
 		}
-
-		p = ether_get_dst(frame);
-		if (!hwaddr_is_bcast(p) && !hwaddr_eq(p, dev->hwaddr))
-			continue;
-		if (hwaddr_is_bcast(p) && cfg->refuse_broadcast)
-			continue;
 
 		switch (ether_get_type(frame)) {
 		case ETHER_TYPE_IPV4:
@@ -184,6 +180,8 @@ int ether_dev_recv_dispatch(struct ether_device *dev,
 			break;
 		}
 
+		ether_frame_free(frame);
+
 		if (ret == ETHER_DISP_QUIT) {
 			ret = 0;
 			break;
@@ -194,12 +192,8 @@ int ether_dev_recv_dispatch(struct ether_device *dev,
 			ret = -1;
 			break;
 		}
-
-		/* continue */
-		ether_frame_free(frame);
 	}
 
-	ether_frame_free(frame);
 	return ret;
 }
 

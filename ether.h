@@ -61,7 +61,6 @@ struct ether_dispatch {
 	ether_frame_handler_t handler_ipv4;
 	ether_frame_handler_t handler_arp;
 	ether_frame_handler_t handler_unk;
-	bool refuse_broadcast;
 	void *data;
 	int err_num;
 };
@@ -107,14 +106,6 @@ static inline void hwaddr_cp(uint8_t *dest, const uint8_t *src)
 static inline bool hwaddr_eq(const uint8_t *dest, const uint8_t *src)
 {
 	return memcmp(dest, src, 6) == 0;
-}
-
-static inline bool hwaddr_is_bcast(const uint8_t *hwaddr)
-{
-	uint8_t bcast[6];
-
-	hwaddr_init(bcast, 0xf);
-	return hwaddr_eq(hwaddr, bcast);
 }
 
 #endif /* ETHER_H */
