@@ -22,27 +22,21 @@
 #include "arp.h"
 #include "utils.h"
 
+#define ECHO_SERVER_PORT 7
+
 struct eserver {
 	uint16_t port;
 	struct pip_stack *stack;
 };
 
-static void echo_server_send_reply(const struct pip_stack *stack,
-                                   const struct ipv4_datagram *ipv4_dtg,
-                                   const struct udp_datagram *udp_dtg)
+static int echo_server_send_reply(const struct pip_stack *stack,
+                                  const struct ipv4_datagram *ipv4_dtg,
+                                  const struct udp_datagram *udp_dtg)
 {
-	struct udp_datagram *udp_dtg_rep;
-
-	udp_dtg_rep = udp_build_datagram(7, udp_get_src_port(udp_dtg),
-                                     udp_get_data(udp_dtg),
-									 udp_get_data_size(udp_dtg));
-	if (!udp_dtg_rep)
-		return;
-
-	ipv4_send(stack->dev, stack->ipv4_mod, ipv4_get_src_addr(ipv4_dtg),
-              IPV4_PROT_UDP, udp_dtg_rep->buf, udp_get_length(udp_dtg_rep));
-
-	udp_datagram_free(udp_dtg_rep);
+	return udp_send_datagram(stack->dev, stack->ipv4_mod, ECHO_SERVER_PORT,
+                             ipv4_get_src_addr(ipv4_dtg),
+							 udp_get_src_port(udp_dtg),
+							 udp_get_data(udp_dtg), udp_get_data_size(udp_dtg));
 }
 
 static void print_datagram(const struct udp_datagram *udp_dtg,
