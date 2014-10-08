@@ -19,6 +19,8 @@
 #include "common.h"
 #include "utils.h"
 #include "udp.h"
+#include "ether.h"
+#include "ipv4.h"
 
 struct udp_datagram *udp_datagram_alloc(size_t data_size)
 {
@@ -137,4 +139,26 @@ void udp_dump_datagram(FILE *stream, const struct udp_datagram *udp_dtg)
 	fprintf(stream, "\n");
 
 	fprintf(stream, "\n");
+}
+
+int udp_send_datagram(struct ether_device *dev, struct ipv4_module *ipv4_mod,
+                      uint16_t udp_src_port, uint32_t ipv4_dst_addr,
+                      uint16_t udp_dst_port, const uint8_t *data,
+					  size_t size)
+{
+	struct udp_datagram *udp_dtg;
+	int err_no, ret;
+
+	udp_dtg = udp_build_datagram(udp_src_port, udp_dst_port, data, size);
+	if (!udp_dtg)
+		return -1;
+
+	ret = ipv4_send(dev, ipv4_mod, ipv4_dst_addr, IPV4_PROT_UDP,
+                    udp_dtg->buf, udp_get_length(udp_dtg));
+
+	err_no = errno;
+	udp_datagram_free(udp_dtg);
+	errno = err_no;
+
+	return ret;
 }

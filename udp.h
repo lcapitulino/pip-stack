@@ -20,6 +20,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stddef.h>
+#include "ether.h"
+#include "ipv4.h"
 
 #define UDP_HEADER_SIZE 8
 
@@ -47,5 +49,10 @@ uint8_t *udp_get_data(const struct udp_datagram *udp_dtg);
 size_t udp_get_data_size(const struct udp_datagram *udp_dtg);
 
 void udp_dump_datagram(FILE *stream, const struct udp_datagram *udp_dtg);
+
+int udp_send_datagram(struct ether_device *dev, struct ipv4_module *ipv4_mod,
+                      uint16_t udp_src_port, uint32_t ipv4_dst_addr,
+                      uint16_t udp_dst_port, const uint8_t *data,
+                      size_t size);
 
 #endif /* UDP_H */
